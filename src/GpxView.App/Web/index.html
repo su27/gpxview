@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com; connect-src https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://unpkg.com; worker-src blob:;">
+  <title>GpxView Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css">
+  <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+  <style>
+    :root{color-scheme:light;--page:#e9edf1;--text:#202124;--muted:#5f6368;--label:#70757a;--glass:rgba(255,255,255,.76);--chart-glass:rgba(255,255,255,.80);--glass-border:rgba(255,255,255,.72);--inner-border:rgba(20,25,30,.10);--shadow:rgba(18,28,38,.20);--empty-bg:rgba(255,255,255,.88)}
+    :root[data-theme="dark"]{color-scheme:dark;--page:#202428;--text:#f1f3f4;--muted:#c2c5c9;--label:#aeb3b8;--glass:rgba(27,29,32,.79);--chart-glass:rgba(25,27,30,.83);--glass-border:rgba(255,255,255,.14);--inner-border:rgba(0,0,0,.34);--shadow:rgba(0,0,0,.42);--empty-bg:rgba(30,32,35,.90)}
+    *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;font:13px "Segoe UI",sans-serif;color:var(--text);background:var(--page);overflow:hidden}
+    #layout{position:relative;width:100%;height:100%}#map{position:absolute;inset:0;background:var(--page)}[hidden]{display:none!important}
+    .glass{background:var(--glass);border:1px solid var(--glass-border);box-shadow:inset 0 0 0 1px var(--inner-border),0 8px 30px var(--shadow);backdrop-filter:blur(16px) saturate(135%);-webkit-backdrop-filter:blur(16px) saturate(135%)}
+    #summaryPanel{position:absolute;z-index:5;left:14px;top:14px;width:196px;max-height:calc(100% - 28px);overflow:hidden;border-radius:13px;padding:14px 14px 15px;pointer-events:none;will-change:transform,opacity;transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .22s ease}
+    #detailsToggle{position:absolute;z-index:6;left:172px;top:20px;width:30px;height:30px;padding:6px;border:1px solid var(--glass-border);border-radius:9px;background:var(--chart-glass);color:var(--muted);box-shadow:inset 0 0 0 1px var(--inner-border),0 3px 12px var(--shadow);backdrop-filter:blur(14px) saturate(135%);cursor:pointer;transition:left .30s cubic-bezier(.2,.8,.2,1),background-color .18s,color .18s}#detailsToggle:hover{color:var(--text);background:var(--glass)}#detailsToggle:focus-visible{outline:2px solid #176bde;outline-offset:2px}#detailsToggle svg{display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.45;stroke-linecap:round;stroke-linejoin:round}#detailsToggle .panelFrame{opacity:.72}#detailsToggle .panelArrow{stroke-width:1.9}.expandDetailsIcon{display:none!important}body.details-hidden #detailsToggle{left:14px}body.details-hidden .collapseDetailsIcon{display:none!important}body.details-hidden .expandDetailsIcon{display:block!important}
+    #summaryTitle{margin:0;font-size:15px;line-height:20px;font-weight:650}#summaryFormat{margin-top:3px;color:var(--muted);font-size:11px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #summaryMetrics{margin-top:6px}.metric{margin-top:8px}.metricLabel{display:block;color:var(--label);font-size:10px;line-height:14px}.metricValue{display:block;margin-top:1px;color:var(--text);font-size:15px;line-height:20px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+    #chartPanel{position:absolute;z-index:4;left:14px;right:14px;bottom:14px;height:164px;border-radius:13px;background:var(--chart-glass);padding:8px 13px 7px;overflow:hidden;will-change:transform,opacity;transition:transform .34s cubic-bezier(.2,.8,.2,1),opacity .24s ease}
+    body.details-hidden #summaryPanel{transform:translateX(calc(-100% - 28px));opacity:0}body.details-hidden #chartPanel{transform:translateY(calc(100% + 28px));opacity:0;pointer-events:none}
+    #chartHeader{height:22px;display:flex;align-items:center;gap:8px;min-width:0}#chartTitle{flex:none;font-weight:650;font-size:13px}#seriesControls{display:flex;align-items:center;gap:4px;min-width:0}.seriesBase,.seriesToggle{height:20px;display:inline-flex;align-items:center;gap:4px;border-radius:10px;padding:0 7px;font:11px "Segoe UI",sans-serif;white-space:nowrap}.seriesBase{color:var(--text)}.seriesToggle{border:1px solid var(--inner-border);background:rgba(127,127,127,.08);color:var(--muted);cursor:pointer}.seriesToggle:hover{background:rgba(127,127,127,.16)}.seriesToggle.active{border-color:var(--series-color);color:var(--series-color);background:rgba(127,127,127,.14);font-weight:600}.seriesDot{width:7px;height:7px;border-radius:50%;background:var(--series-color);box-shadow:0 0 0 1px rgba(255,255,255,.35)}#chartMeta{margin-left:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}#chart{width:100%;height:127px;display:block;cursor:crosshair}
+    #empty{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;padding:10px 14px;border:1px solid var(--glass-border);border-radius:10px;background:var(--empty-bg);box-shadow:0 4px 18px var(--shadow);backdrop-filter:blur(12px);color:var(--muted)}
+    .maplibregl-ctrl-attrib{font-size:10px}.maplibregl-ctrl-group{border-radius:8px!important}
+    :root[data-theme="dark"] .maplibregl-ctrl-attrib{background:rgba(32,32,32,.86);color:#ddd}:root[data-theme="dark"] .maplibregl-ctrl-attrib a{color:#8ab4f8}
+    @media(max-width:1050px){#summaryPanel{left:10px;top:10px;width:184px;padding:12px}#detailsToggle{left:156px;top:16px}body.details-hidden #detailsToggle{left:10px}#chartPanel{left:10px;right:10px;bottom:10px}}
+    @media(prefers-reduced-motion:reduce){#summaryPanel,#chartPanel,#detailsToggle{transition-duration:.01ms!important}}
+  </style>
+</head>
+<body>
+<div id="layout">
+  <div id="map"><div id="empty">打开或拖入轨迹文件</div></div>
+  <aside id="summaryPanel" class="glass">
+    <h2 id="summaryTitle">轨迹摘要</h2>
+    <div id="summaryFormat">尚未打开文件</div>
+    <div id="summaryMetrics" hidden>
+      <div class="metric"><span class="metricLabel">距离</span><strong id="summaryDistance" class="metricValue">—</strong></div>
+      <div id="durationMetric" class="metric" hidden><span class="metricLabel">总用时 / 移动时间</span><strong id="summaryDuration" class="metricValue"></strong></div>
+      <div id="elevationMetric" class="metric" hidden><span class="metricLabel">累计爬升 / 下降</span><strong id="summaryElevation" class="metricValue"></strong></div>
+      <div id="speedMetric" class="metric" hidden><span class="metricLabel">平均 / 最大速度</span><strong id="summarySpeed" class="metricValue"></strong></div>
+      <div id="heartRateMetric" class="metric" hidden><span class="metricLabel">平均 / 最大心率</span><strong id="summaryHeartRate" class="metricValue"></strong></div>
+      <div id="cadencePowerMetric" class="metric" hidden><span class="metricLabel">踏频 / 功率</span><strong id="summaryCadencePower" class="metricValue"></strong></div>
+    </div>
+  </aside>
+  <button id="detailsToggle" type="button" title="隐藏详细信息" aria-label="隐藏详细信息" aria-expanded="true" aria-controls="summaryPanel chartPanel">
+    <svg class="collapseDetailsIcon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect class="panelFrame" x="3.5" y="3.5" width="17" height="17" rx="3" />
+      <path class="panelFrame" d="M8.5 4v16M8.5 15.5H20" />
+      <path class="panelArrow" d="m6.5 9.5-2.5 2.5 2.5 2.5M11.5 18l2.5 2.5 2.5-2.5" />
+    </svg>
+    <svg class="expandDetailsIcon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect class="panelFrame" x="3.5" y="3.5" width="17" height="17" rx="3" />
+      <path class="panelFrame" d="M8.5 4v16M8.5 15.5H20" />
+      <path class="panelArrow" d="m4 9.5 2.5 2.5L4 14.5M11.5 20.5 14 18l2.5 2.5" />
+    </svg>
+  </button>
+  <section id="chartPanel" class="glass" hidden>
+    <div id="chartHeader">
+      <div id="chartTitle">轨迹曲线</div>
+      <div id="seriesControls" title="选择要叠加的曲线；悬停查看真实值">
+        <span id="elevationLegend" class="seriesBase" style="--series-color:#176bde"><i class="seriesDot"></i>海拔</span>
+        <button id="heartRateToggle" class="seriesToggle" style="--series-color:#e5484d" data-series="heartRate" hidden><i class="seriesDot"></i>心率</button>
+        <button id="speedToggle" class="seriesToggle" style="--series-color:#0f9d7a" data-series="speed" hidden><i class="seriesDot"></i>速度</button>
+        <button id="powerToggle" class="seriesToggle" style="--series-color:#f59e0b" data-series="power" hidden><i class="seriesDot"></i>功率</button>
+      </div>
+      <div id="chartMeta">暂无数据</div>
+    </div>
+    <canvas id="chart"></canvas>
+  </section>
+</div>
+<script>
+  const baseMaps={
+    osm:{tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],maxzoom:19,attribution:'© OpenStreetMap contributors'},
+    satellite:{tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],maxzoom:19,attribution:'Powered by Esri | Esri, Maxar, Earthstar Geographics, and the GIS User Community'},
+    topo:{tiles:['https://tile.opentopomap.org/{z}/{x}/{y}.png'],maxzoom:17,attribution:'© OpenStreetMap contributors, SRTM | Map style © OpenTopoMap (CC-BY-SA)'},
+    humanitarian:{tiles:['https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png'],maxzoom:19,attribution:'© OpenStreetMap contributors | Tiles style by HOT'}
+  };
+  const style={version:8,sources:{},layers:[]};
+  Object.entries(baseMaps).forEach(([id,config])=>{const source=`base-${id}`;style.sources[source]={type:'raster',tiles:config.tiles,tileSize:256,maxzoom:config.maxzoom,attribution:config.attribution};style.layers.push({id:source,type:'raster',source,layout:{visibility:id==='osm'?'visible':'none'}})});
+  const map=new maplibregl.Map({container:'map',style,center:[105,35],zoom:2,attributionControl:false});
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+  map.addControl(new maplibregl.AttributionControl({compact:true}),'top-right');
+  const seriesDefinitions={
+    elevation:{field:'elevationMeters',label:'海拔',unit:'m',color:'#176bde',decimals:0},
+    heartRate:{field:'heartRateBpm',label:'心率',unit:'bpm',color:'#e5484d',decimals:0},
+    speed:{field:'speedKmh',label:'速度',unit:'km/h',color:'#0f9d7a',decimals:1},
+    power:{field:'powerWatts',label:'功率',unit:'W',color:'#f59e0b',decimals:0}
+  };
+  const selectedOverlays=new Set();
+  let profile=[],loaded=false,activeBaseMap='osm',darkTheme=false,availableSeries={};
+  const canvas=document.getElementById('chart'),meta=document.getElementById('chartMeta'),empty=document.getElementById('empty'),chartPanel=document.getElementById('chartPanel'),summaryMetrics=document.getElementById('summaryMetrics'),elevationLegend=document.getElementById('elevationLegend'),detailsToggle=document.getElementById('detailsToggle');
+  detailsToggle.addEventListener('click',()=>setDetailsVisible(document.body.classList.contains('details-hidden')));
+  document.querySelectorAll('.seriesToggle').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.series;selectedOverlays.has(key)?selectedOverlays.delete(key):selectedOverlays.add(key);refreshSeriesControls();renderChart()}));
+  map.on('load',()=>{
+    map.addSource('tracks',{type:'geojson',data:featureCollection([])});
+    map.addLayer({id:'track-shadow',type:'line',source:'tracks',paint:{'line-color':'#fff','line-width':7,'line-opacity':.9}});
+    map.addLayer({id:'track',type:'line',source:'tracks',paint:{'line-color':'#176bde','line-width':4}});
+    map.addSource('ends',{type:'geojson',data:featureCollection([])});
+    map.addLayer({id:'ends',type:'circle',source:'ends',paint:{'circle-radius':6,'circle-color':['match',['get','kind'],'start','#18a558','#e34b4b'],'circle-stroke-color':'#fff','circle-stroke-width':2}});
+    map.addSource('hover',{type:'geojson',data:featureCollection([])});
+    map.addLayer({id:'hover',type:'circle',source:'hover',paint:{'circle-radius':7,'circle-color':'#fff','circle-stroke-color':'#176bde','circle-stroke-width':3}});
+    loaded=true;setBaseMap(activeBaseMap);
+  });
+  function featureCollection(features){return{type:'FeatureCollection',features}}
+  function setBaseMap(id){if(!baseMaps[id])id='osm';activeBaseMap=id;if(!loaded)return;Object.keys(baseMaps).forEach(key=>map.setLayoutProperty(`base-${key}`,'visibility',key===id?'visible':'none'))}
+  function setTheme(theme){darkTheme=theme==='dark';document.documentElement.dataset.theme=darkTheme?'dark':'light';renderChart()}
+  function setDetailsVisible(visible){document.body.classList.toggle('details-hidden',!visible);detailsToggle.setAttribute('aria-expanded',String(visible));const label=visible?'隐藏详细信息':'显示详细信息';detailsToggle.title=label;detailsToggle.setAttribute('aria-label',label)}
+  function setMetric(rowId,valueId,value){const row=document.getElementById(rowId);row.hidden=!value;if(value)document.getElementById(valueId).textContent=value}
+  function updateSummary(summary){if(!summary)return;document.getElementById('summaryFormat').textContent=summary.formatLine;document.getElementById('summaryDistance').textContent=summary.distance;summaryMetrics.hidden=false;setMetric('durationMetric','summaryDuration',summary.duration);setMetric('elevationMetric','summaryElevation',summary.elevation);setMetric('speedMetric','summarySpeed',summary.speed);setMetric('heartRateMetric','summaryHeartRate',summary.heartRate);setMetric('cadencePowerMetric','summaryCadencePower',summary.cadencePower)}
+  function refreshSeriesControls(){
+    Object.entries(seriesDefinitions).forEach(([key,definition])=>availableSeries[key]=profile.some(point=>Number.isFinite(point[definition.field])));
+    [...selectedOverlays].forEach(key=>{if(!availableSeries[key])selectedOverlays.delete(key)});
+    const optionalKeys=['heartRate','speed','power'];
+    if(!availableSeries.elevation&&!optionalKeys.some(key=>selectedOverlays.has(key))){const first=optionalKeys.find(key=>availableSeries[key]);if(first)selectedOverlays.add(first)}
+    elevationLegend.hidden=!availableSeries.elevation;
+    optionalKeys.forEach(key=>{const button=document.getElementById(`${key}Toggle`);button.hidden=!availableSeries[key];button.classList.toggle('active',selectedOverlays.has(key))});
+    document.getElementById('chartTitle').textContent=availableSeries.elevation?'海拔曲线':'运动曲线';
+    return Object.values(availableSeries).some(Boolean);
+  }
+  function activeSeries(){const keys=[];if(availableSeries.elevation)keys.push('elevation');['heartRate','speed','power'].forEach(key=>{if(availableSeries[key]&&selectedOverlays.has(key))keys.push(key)});return keys}
+  function formatSeriesValue(key,value){const definition=seriesDefinitions[key];return `${definition.label} ${value.toFixed(definition.decimals)} ${definition.unit}`}
+  function loadTrack(data){
+    profile=data.profile||[];updateSummary(data.summary);empty.style.display='none';const hasChartData=refreshSeriesControls();chartPanel.hidden=!hasChartData;
+    const features=(data.segments||[]).filter(s=>s.coordinates.length>0).map(s=>({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:s.coordinates}}));
+    const apply=()=>{
+      map.getSource('tracks').setData(featureCollection(features));
+      const endpoints=[];features.forEach(f=>{const c=f.geometry.coordinates;if(c.length){endpoints.push({type:'Feature',properties:{kind:'start'},geometry:{type:'Point',coordinates:c[0]}});if(c.length>1)endpoints.push({type:'Feature',properties:{kind:'end'},geometry:{type:'Point',coordinates:c[c.length-1]}})}});
+      map.getSource('ends').setData(featureCollection(endpoints));
+      const bounds=new maplibregl.LngLatBounds();features.forEach(f=>f.geometry.coordinates.forEach(c=>bounds.extend(c)));if(!bounds.isEmpty())map.fitBounds(bounds,{padding:{top:55,right:55,bottom:hasChartData?198:55,left:230},maxZoom:16,duration:500});
+    }; loaded?apply():map.once('load',apply);renderChart();
+  }
+  function resizeCanvas(){const r=canvas.getBoundingClientRect(),d=devicePixelRatio||1;canvas.width=Math.max(1,Math.round(r.width*d));canvas.height=Math.max(1,Math.round(r.height*d));return{ctx:canvas.getContext('2d'),w:r.width,h:r.height,d}}
+  function rangeFor(key){const definition=seriesDefinitions[key],values=profile.map(point=>point[definition.field]).filter(Number.isFinite);let min=Math.min(...values),max=Math.max(...values);if(key==='elevation'){min=Math.floor(min/10)*10;max=Math.ceil(max/10)*10}if(min===max){const delta=Math.max(1,Math.abs(min)*.05);min-=delta;max+=delta}else{const padding=(max-min)*.06;min-=padding;max+=padding}return{min,max}}
+  function renderChart(active=-1){
+    const {ctx,w,h,d}=resizeCanvas();ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,w,h);const pad={l:48,r:16,t:10,b:24},keys=activeSeries();if(!keys.length)return;
+    const ranges={};keys.forEach(key=>ranges[key]=rangeFor(key));const baseKey=keys[0],baseDefinition=seriesDefinitions[baseKey],baseRange=ranges[baseKey];
+    const x=index=>pad.l+index/Math.max(1,profile.length-1)*(w-pad.l-pad.r),y=(key,value)=>pad.t+(ranges[key].max-value)/(ranges[key].max-ranges[key].min)*(h-pad.t-pad.b);
+    ctx.strokeStyle=darkTheme?'#454545':'#dfe3e7';ctx.fillStyle=darkTheme?'#aaa':'#6f7479';ctx.lineWidth=1;ctx.font='10px Segoe UI';for(let i=0;i<3;i++){const value=baseRange.max-(baseRange.max-baseRange.min)*i/2,yy=y(baseKey,value);ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(w-pad.r,yy);ctx.stroke();ctx.fillText(`${value.toFixed(baseDefinition.decimals)} ${baseDefinition.unit}`,2,yy+4)}
+    if(keys.includes('elevation')){const valid=profile.map((point,index)=>({index,value:point.elevationMeters})).filter(item=>Number.isFinite(item.value));if(valid.length>1){ctx.beginPath();ctx.moveTo(x(valid[0].index),y('elevation',valid[0].value));valid.slice(1).forEach(item=>ctx.lineTo(x(item.index),y('elevation',item.value)));ctx.lineTo(x(valid.at(-1).index),h-pad.b);ctx.lineTo(x(valid[0].index),h-pad.b);ctx.closePath();const gradient=ctx.createLinearGradient(0,pad.t,0,h-pad.b);gradient.addColorStop(0,darkTheme?'rgba(65,140,245,.44)':'rgba(23,107,222,.38)');gradient.addColorStop(1,darkTheme?'rgba(65,140,245,.06)':'rgba(23,107,222,.04)');ctx.fillStyle=gradient;ctx.fill()}}
+    keys.forEach(key=>{const definition=seriesDefinitions[key];ctx.beginPath();let drawing=false;profile.forEach((point,index)=>{const value=point[definition.field];if(!Number.isFinite(value)){drawing=false;return}const xx=x(index),yy=y(key,value);drawing?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy);drawing=true});ctx.strokeStyle=definition.color;ctx.lineWidth=key==='elevation'?2:1.8;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke()});
+    const total=profile.at(-1)?.distanceKm||0,plotWidth=w-pad.l-pad.r,intervals=Math.max(2,Math.min(6,Math.floor(plotWidth/140)));ctx.font='10px Segoe UI';for(let i=0;i<=intervals;i++){const ratio=i/intervals,xx=pad.l+ratio*plotWidth,value=total*ratio;ctx.strokeStyle=darkTheme?'#666':'#aeb4ba';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xx,h-pad.b);ctx.lineTo(xx,h-pad.b+4);ctx.stroke();ctx.fillStyle=darkTheme?'#aaa':'#6f7479';ctx.textAlign=i===0?'left':i===intervals?'right':'center';ctx.fillText(value.toFixed(total<10?1:0)+' km',xx,h-5)}ctx.textAlign='left';
+    if(active>=0){const point=profile[active],xx=x(active);ctx.strokeStyle=darkTheme?'#d7dadd':'#555b61';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xx,pad.t);ctx.lineTo(xx,h-pad.b);ctx.stroke();keys.forEach(key=>{const definition=seriesDefinitions[key],value=point[definition.field];if(!Number.isFinite(value))return;ctx.fillStyle=definition.color;ctx.beginPath();ctx.arc(xx,y(key,value),3.5,0,Math.PI*2);ctx.fill();ctx.strokeStyle=darkTheme?'#222':'#fff';ctx.lineWidth=1.5;ctx.stroke()})}
+  }
+  canvas.addEventListener('pointermove',event=>{if(!profile.length)return;const rect=canvas.getBoundingClientRect(),left=48,right=16,ratio=Math.max(0,Math.min(1,(event.clientX-rect.left-left)/(rect.width-left-right))),index=Math.round(ratio*(profile.length-1)),point=profile[index];renderChart(index);const values=activeSeries().filter(key=>Number.isFinite(point[seriesDefinitions[key].field])).map(key=>formatSeriesValue(key,point[seriesDefinitions[key].field]));meta.textContent=`${point.distanceKm.toFixed(2)} km${values.length?' · '+values.join(' · '):''}`;if(loaded)map.getSource('hover').setData(featureCollection([{type:'Feature',properties:{},geometry:{type:'Point',coordinates:[point.longitude,point.latitude]}}]))});
+  canvas.addEventListener('pointerleave',()=>{renderChart();meta.textContent=profile.length?`${(profile.at(-1)?.distanceKm||0).toFixed(2)} km`:'暂无数据';if(loaded)map.getSource('hover').setData(featureCollection([]))});
+  addEventListener('resize',()=>renderChart());
+  if(window.chrome?.webview){chrome.webview.addEventListener('message',e=>{if(e.data?.type==='loadTrack')loadTrack(e.data);else if(e.data?.type==='setMapStyle')setBaseMap(e.data.mapStyle);else if(e.data?.type==='setTheme')setTheme(e.data.theme)});chrome.webview.postMessage('ready')}
+  renderChart();
+</script>
+</body>
+</html>

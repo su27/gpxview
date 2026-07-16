@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{244F3F6E-0A7F-41BE-A4EE-14813D26657C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GpxView.Core", "src\GpxView.Core\GpxView.Core.csproj", "{E05FBD5D-B0BB-4DEE-AD28-4CB29E479B41}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GpxView.Geo", "src\GpxView.Geo\GpxView.Geo.csproj", "{1846C56B-7A5A-403A-814E-F14B17E7F3F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GpxView.Formats", "src\GpxView.Formats\GpxView.Formats.csproj", "{1908B7A1-BF24-4BAD-95B9-6018D0148FFF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GpxView.App", "src\GpxView.App\GpxView.App.csproj", "{438C2D00-21B4-4F16-AFD7-36C8C3208C86}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{08EAABDA-80A8-4A54-8262-E3B81FC2FCFB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GpxView.Tests", "tests\GpxView.Tests\GpxView.Tests.csproj", "{329AE087-C054-4A9F-B635-14CE6B9CFE95}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E05FBD5D-B0BB-4DEE-AD28-4CB29E479B41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E05FBD5D-B0BB-4DEE-AD28-4CB29E479B41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E05FBD5D-B0BB-4DEE-AD28-4CB29E479B41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E05FBD5D-B0BB-4DEE-AD28-4CB29E479B41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1846C56B-7A5A-403A-814E-F14B17E7F3F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1846C56B-7A5A-403A-814E-F14B17E7F3F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1846C56B-7A5A-403A-814E-F14B17E7F3F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1846C56B-7A5A-403A-814E-F14B17E7F3F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1908B7A1-BF24-4BAD-95B9-6018D0148FFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1908B7A1-BF24-4BAD-95B9-6018D0148FFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1908B7A1-BF24-4BAD-95B9-6018D0148FFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1908B7A1-BF24-4BAD-95B9-6018D0148FFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{438C2D00-21B4-4F16-AFD7-36C8C3208C86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{438C2D00-21B4-4F16-AFD7-36C8C3208C86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{438C2D00-21B4-4F16-AFD7-36C8C3208C86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{438C2D00-21B4-4F16-AFD7-36C8C3208C86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{329AE087-C054-4A9F-B635-14CE6B9CFE95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{329AE087-C054-4A9F-B635-14CE6B9CFE95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{329AE087-C054-4A9F-B635-14CE6B9CFE95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{329AE087-C054-4A9F-B635-14CE6B9CFE95}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E05FBD5D-B0BB-4DEE-AD28-4CB29E479B41} = {244F3F6E-0A7F-41BE-A4EE-14813D26657C}
+		{1846C56B-7A5A-403A-814E-F14B17E7F3F6} = {244F3F6E-0A7F-41BE-A4EE-14813D26657C}
+		{1908B7A1-BF24-4BAD-95B9-6018D0148FFF} = {244F3F6E-0A7F-41BE-A4EE-14813D26657C}
+		{438C2D00-21B4-4F16-AFD7-36C8C3208C86} = {244F3F6E-0A7F-41BE-A4EE-14813D26657C}
+		{329AE087-C054-4A9F-B635-14CE6B9CFE95} = {08EAABDA-80A8-4A54-8262-E3B81FC2FCFB}
+	EndGlobalSection
+EndGlobal
