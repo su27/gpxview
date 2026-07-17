@@ -8,6 +8,8 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 - OSM 标准、天地图街道/影像/地形、Esri 卫星、OpenTopoMap、OSM 人道主义底图切换
 - 地图铺满内容区，摘要和图表以半透明背景模糊层覆盖在地图上，可一键收起
 - 状态栏持续显示文件格式、距离、累计爬升、总用时和轨迹点数
+- 城市级轨迹地名识别，并在当前摘要和最近轨迹中显示
+- 最近轨迹面板缓存文件名、统计、地名、轨迹缩略图和海拔缩略图，启动时无需重新解析原文件
 - 单图标切换跟随系统、浅色和深色主题，WPF、地图覆盖层与图表同步
 - 海拔作为基础曲线，可按数据存在情况叠加心率、速度和功率；悬停数值与地图位置联动
 - 距离、时长、移动时间、爬升、速度、心率、踏频、功率统计
@@ -49,9 +51,9 @@ dotnet run --project src\GpxView.App\GpxView.App.csproj
 
 仓库通过 `global.json` 固定使用 .NET SDK 10.0.302。MapLibre 的 JS、CSS 和许可证固定保存在 `src\GpxView.App\Web\vendor\maplibre-gl\5.6.2`，应用运行时不依赖 unpkg 等前端 CDN。
 
-## 天地图配置
+## 地图服务配置
 
-复制示例配置并填写在天地图服务中心申请的浏览器端 Key 和安全密钥：
+复制示例配置并按需填写在天地图服务中心申请的浏览器端 Key 和安全密钥：
 
 ```powershell
 Copy-Item src\GpxView.App\MapServices.example.json src\GpxView.App\MapServices.local.json
@@ -64,6 +66,10 @@ Copy-Item src\GpxView.App\MapServices.example.json src\GpxView.App\MapServices.l
   "tianditu": {
     "tk": "YOUR_BROWSER_KEY",
     "sk": "YOUR_SECURITY_KEY"
+  },
+  "geocoding": {
+    "enabled": true,
+    "endpoint": "https://nominatim.openstreetmap.org/reverse"
   }
 }
 ```
@@ -71,6 +77,14 @@ Copy-Item src\GpxView.App\MapServices.example.json src\GpxView.App\MapServices.l
 `MapServices.local.json` 已被 Git 忽略，并会复制到开发输出和自包含发布目录。缺少有效的 `tk` 或 `sk` 时，三个天地图选项会自动禁用。
 
 天地图官方建议安全密钥仅由自有代理服务器追加。当前桌面版本没有代理，在开启安全密钥后必须把 `tk` 与 `sk` 一起发送给 WMTS，因此该配置虽然不会进入 Git，仍会包含在发布目录和 MSI 中，也能被终端用户提取。当前方式只适合自用和小范围测试；公开分发前应改为用户自行配置或由受控代理转发。
+
+## 最近轨迹与地名
+
+应用最多保存 20 条最近轨迹到 `%LOCALAPPDATA%\GpxView\recent-tracks.json`。缓存包含原文件路径、格式、距离、爬升、地名及经过归一化抽样的轨迹和海拔缩略数据；打开最近面板不会重新读取轨迹文件。点击记录时才检查原文件，文件不存在会提示并从历史中删除。
+
+首次打开一个尚未缓存地名的新位置时，应用会把轨迹中最长分段的中间点以 WGS84 坐标发送给 OpenStreetMap Foundation 的 Nominatim 反向地理编码服务，并请求城市级结果。结果会持久化复用；请求使用明确的 GpxView User-Agent、全应用串行且间隔不少于 1.1 秒，不执行批量或周期查询。界面显示 OpenStreetMap/Nominatim 署名。
+
+这意味着轨迹的一个代表坐标会发送给 OSMF。若不希望发送，可在 `MapServices.local.json` 中把 `geocoding.enabled` 设为 `false`；也可以修改 `geocoding.endpoint` 切换到自建或其他兼容的 Nominatim 服务，无需修改程序代码。公共 Nominatim 容量有限，当前实现适合低频桌面使用；大规模分发应使用受控代理、自建实例或有容量保障的服务。
 
 ## 发布与安装器构建
 

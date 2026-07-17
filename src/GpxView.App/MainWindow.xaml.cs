@@ -88,16 +88,18 @@ public partial class MainWindow : Window
     {
         try
         {
-            if (e.TryGetWebMessageAsString() != "ready") return;
-            webReady = true;
-            SendTheme();
-            SendMapStyle();
-            if (currentDocument is not null)
-                SendToMap(currentDocument, currentStatistics ?? TrackStatisticsCalculator.Calculate(currentDocument));
+            using var message = JsonDocument.Parse(e.WebMessageAsJson);
+            if (message.RootElement.ValueKind == JsonValueKind.String
+                && message.RootElement.GetString() == "ready")
+            {
+                HandleWebReady();
+                return;
+            }
+            HandleWebCommand(message.RootElement);
         }
-        catch (InvalidOperationException)
+        catch (Exception exception) when (exception is InvalidOperationException or JsonException)
         {
-            // Ignore non-string messages from the map page.
+            // Ignore malformed or unsupported messages from the local map page.
         }
     }
 
@@ -281,12 +283,15 @@ public partial class MainWindow : Window
             currentDocument = document;
             var statistics = TrackStatisticsCalculator.Calculate(document);
             currentStatistics = statistics;
+            var recentEntry = RegisterRecentTrack(path, document, statistics);
             SendToMap(document, statistics);
+            SendCurrentPlaceName();
             FileNameText.Text = document.Name;
             Title = $"{document.Name} — GpxView";
             StatusText.Text = Path.GetFileName(path);
             StatusSummaryText.Text = BuildStatusSummary(document, statistics);
             StatusSummaryText.Visibility = Visibility.Visible;
+            _ = ResolvePlaceNameAsync(recentEntry, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -446,6 +451,7 @@ public partial class MainWindow : Window
         SystemEvents.UserPreferenceChanged -= OnSystemPreferenceChanged;
         loadCancellation?.Cancel();
         loadCancellation?.Dispose();
+        CloseRecentTrackServices();
     }
 
     private enum DisplayTheme
@@ -458,12 +464,19 @@ public partial class MainWindow : Window
     private sealed record MapServiceOptions
     {
         public TiandituOptions? Tianditu { get; init; }
+        public GeocodingOptions? Geocoding { get; init; }
     }
 
     private sealed record TiandituOptions
     {
         public string Tk { get; init; } = string.Empty;
         public string Sk { get; init; } = string.Empty;
+    }
+
+    private sealed record GeocodingOptions
+    {
+        public bool Enabled { get; init; } = true;
+        public string Endpoint { get; init; } = DefaultGeocodingEndpoint;
     }
 
     private sealed record WebPayload(string Type, string Name, IReadOnlyList<WebSegment> Segments,

@@ -37,6 +37,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Width="30" Height="30" CornerRadius="8" Background="Transparent">
@@ -66,9 +67,11 @@
                         <ComboBoxItem Content="BD-09" />
                     </ComboBox>
                 </StackPanel>
-                <Button x:Name="ThemeButton" Grid.Column="4" Width="30" Height="30" Padding="0" Margin="0,0,8,0"
+                <Button Grid.Column="4" Content="最近轨迹" Padding="11,5" Margin="0,0,8,0" FontSize="12"
+                        ToolTip="显示最近打开的轨迹" Click="OnRecentFiles" />
+                <Button x:Name="ThemeButton" Grid.Column="5" Width="30" Height="30" Padding="0" Margin="0,0,8,0"
                         Content="◐" FontSize="15" ToolTip="主题：跟随系统（点击切换）" Click="OnThemeToggle" />
-                <Button Grid.Column="5" Content="打开文件" Padding="12,5" FontSize="12" Click="OnOpenFile" />
+                <Button Grid.Column="6" Content="打开文件" Padding="12,5" FontSize="12" Click="OnOpenFile" />
             </Grid>
         </Border>
 

@@ -2,5 +2,9 @@
   "tianditu": {
     "tk": "YOUR_BROWSER_KEY",
     "sk": "YOUR_SECURITY_KEY"
+  },
+  "geocoding": {
+    "enabled": true,
+    "endpoint": "https://nominatim.openstreetmap.org/reverse"
   }
 }
