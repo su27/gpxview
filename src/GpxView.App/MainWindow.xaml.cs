@@ -16,7 +16,12 @@ namespace GpxView.App;
 public partial class MainWindow : Window
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".gpx", ".kml", ".kmz", ".fit"
+    };
     private readonly TrackFileLoader loader = new();
+    private readonly MapServiceOptions mapServices = LoadMapServiceOptions();
     private CancellationTokenSource? loadCancellation;
     private TrackDocument? currentDocument;
     private TrackStatistics? currentStatistics;
@@ -28,6 +33,15 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        var tiandituEnabled = mapServices.Tianditu is { Tk.Length: > 0, Sk.Length: > 0 };
+        for (var index = 1; index <= 3; index++)
+        {
+            if (MapStyleBox.Items[index] is ComboBoxItem item)
+            {
+                item.IsEnabled = tiandituEnabled;
+                if (!tiandituEnabled) item.ToolTip = "请配置 MapServices.local.json";
+            }
+        }
         SystemEvents.UserPreferenceChanged += OnSystemPreferenceChanged;
         ApplyTheme();
     }
@@ -36,11 +50,18 @@ public partial class MainWindow : Window
     {
         try
         {
-            await MapView.EnsureCoreWebView2Async();
+            var webViewDataFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "GpxView", "WebView2");
+            var webEnvironment = await CoreWebView2Environment.CreateAsync(userDataFolder: webViewDataFolder);
+            await MapView.EnsureCoreWebView2Async(webEnvironment);
             var core = MapView.CoreWebView2;
             MapView.AllowExternalDrop = false;
             core.Settings.AreDefaultContextMenusEnabled = false;
             core.Settings.IsStatusBarEnabled = false;
+            var mapServicesJson = JsonSerializer.Serialize(mapServices, JsonOptions);
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(
+                $"window.gpxViewMapServices={mapServicesJson};");
             core.SetVirtualHostNameToFolderMapping(
                 "app.gpxview",
                 Path.Combine(AppContext.BaseDirectory, "Web"),
@@ -51,6 +72,9 @@ public partial class MainWindow : Window
                 if (!args.Uri.StartsWith("https://app.gpxview/", StringComparison.OrdinalIgnoreCase)) args.Cancel = true;
             };
             MapView.Source = new Uri("https://app.gpxview/index.html");
+
+            var startupPath = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault(IsSupportedTrackFile);
+            if (startupPath is not null) await LoadFileAsync(Path.GetFullPath(startupPath));
         }
         catch (Exception exception)
         {
@@ -162,6 +186,50 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog(this) == true) _ = LoadFileAsync(dialog.FileName);
     }
 
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        var isFullScreen = WindowStyle == WindowStyle.None;
+        if (e.Key == Key.F11 || e.Key == Key.Escape && isFullScreen)
+        {
+            if (Content is not Grid rootGrid || MapView.Parent is not Border mapFrame) return;
+
+            if (!isFullScreen)
+            {
+                Tag = WindowState;
+                WindowState = WindowState.Normal;
+                WindowStyle = WindowStyle.None;
+                ResizeMode = ResizeMode.NoResize;
+                rootGrid.RowDefinitions[0].Height = new GridLength(0);
+                rootGrid.RowDefinitions[2].Height = new GridLength(0);
+                mapFrame.Margin = new Thickness(0);
+                mapFrame.BorderThickness = new Thickness(0);
+                mapFrame.CornerRadius = new CornerRadius(0);
+                WindowState = WindowState.Maximized;
+            }
+            else
+            {
+                var previousState = Tag is WindowState state ? state : WindowState.Normal;
+                WindowState = WindowState.Normal;
+                WindowStyle = WindowStyle.SingleBorderWindow;
+                ResizeMode = ResizeMode.CanResize;
+                rootGrid.RowDefinitions[0].Height = new GridLength(48);
+                rootGrid.RowDefinitions[2].Height = new GridLength(26);
+                mapFrame.Margin = new Thickness(8);
+                mapFrame.BorderThickness = new Thickness(1);
+                mapFrame.CornerRadius = new CornerRadius(10);
+                WindowState = previousState;
+                Tag = null;
+            }
+
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key != Key.O || (Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
+        e.Handled = true;
+        OnOpenFile(sender, new RoutedEventArgs());
+    }
+
     private void OnDragOver(object sender, DragEventArgs e)
     {
         e.Effects = TryGetDroppedFile(e.Data, out _) ? DragDropEffects.Copy : DragDropEffects.None;
@@ -180,9 +248,11 @@ public partial class MainWindow : Window
         if (!data.GetDataPresent(DataFormats.FileDrop) || data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } files)
             return false;
         path = files[0];
-        return File.Exists(path) && new[] { ".gpx", ".kml", ".kmz", ".fit" }
-            .Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+        return IsSupportedTrackFile(path);
     }
+
+    private static bool IsSupportedTrackFile(string path) =>
+        File.Exists(path) && SupportedExtensions.Contains(Path.GetExtension(path));
 
     private async void OnCoordinateChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -214,7 +284,9 @@ public partial class MainWindow : Window
             SendToMap(document, statistics);
             FileNameText.Text = document.Name;
             Title = $"{document.Name} — GpxView";
-            StatusText.Text = $"已加载 {document.PointCount:N0} 个轨迹点 · {Path.GetFileName(path)}";
+            StatusText.Text = Path.GetFileName(path);
+            StatusSummaryText.Text = BuildStatusSummary(document, statistics);
+            StatusSummaryText.Visibility = Visibility.Visible;
         }
         catch (OperationCanceledException)
         {
@@ -251,9 +323,12 @@ public partial class MainWindow : Window
         if (!webReady || MapView.CoreWebView2 is null) return;
         var mapStyle = MapStyleBox.SelectedIndex switch
         {
-            1 => "satellite",
-            2 => "topo",
-            3 => "humanitarian",
+            1 => "tianditu-street",
+            2 => "tianditu-imagery",
+            3 => "tianditu-terrain",
+            4 => "satellite",
+            5 => "topo",
+            6 => "humanitarian",
             _ => "osm"
         };
         var message = new { Type = "setMapStyle", MapStyle = mapStyle };
@@ -331,9 +406,40 @@ public partial class MainWindow : Window
             sensorValues.Count > 0 ? string.Join(" / ", sensorValues) : null);
     }
 
+    private static string BuildStatusSummary(TrackDocument document, TrackStatistics statistics)
+    {
+        var values = new List<string>
+        {
+            document.Format.ToString().ToUpperInvariant(),
+            statistics.DistanceMeters >= 1000
+                ? $"{statistics.DistanceMeters / 1000:N2} km"
+                : $"{statistics.DistanceMeters:N0} m"
+        };
+        if (statistics.MinimumElevationMeters is not null) values.Add($"↑ {statistics.ElevationGainMeters:N0} m");
+        if (statistics.Duration > TimeSpan.Zero) values.Add(FormatDuration(statistics.Duration));
+        values.Add($"{statistics.PointCount:N0} 点");
+        return string.Join("  ·  ", values);
+    }
+
     private static string FormatDuration(TimeSpan duration) => duration.TotalHours >= 1
         ? $"{(int)duration.TotalHours}:{duration.Minutes:00}:{duration.Seconds:00}"
         : $"{duration.Minutes:00}:{duration.Seconds:00}";
+
+    private static MapServiceOptions LoadMapServiceOptions()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "MapServices.local.json");
+        if (!File.Exists(path)) return new MapServiceOptions();
+
+        try
+        {
+            return JsonSerializer.Deserialize<MapServiceOptions>(File.ReadAllText(path), JsonOptions)
+                   ?? new MapServiceOptions();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return new MapServiceOptions();
+        }
+    }
 
     private void OnClosing(object? sender, CancelEventArgs e)
     {
@@ -347,6 +453,17 @@ public partial class MainWindow : Window
         System,
         Light,
         Dark
+    }
+
+    private sealed record MapServiceOptions
+    {
+        public TiandituOptions? Tianditu { get; init; }
+    }
+
+    private sealed record TiandituOptions
+    {
+        public string Tk { get; init; } = string.Empty;
+        public string Sk { get; init; } = string.Empty;
     }
 
     private sealed record WebPayload(string Type, string Name, IReadOnlyList<WebSegment> Segments,

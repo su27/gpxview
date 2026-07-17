@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
-        Title="GpxView" Width="1280" Height="820" MinWidth="960" MinHeight="640"
+        Title="GpxView" Icon="Assets/GpxView.ico" Width="1280" Height="820" MinWidth="960" MinHeight="640"
         WindowStartupLocation="CenterScreen" AllowDrop="True"
-        Loaded="OnLoaded" Closing="OnClosing" PreviewDragOver="OnDragOver" PreviewDrop="OnDrop"
+        Loaded="OnLoaded" Closing="OnClosing" PreviewKeyDown="OnPreviewKeyDown" PreviewDragOver="OnDragOver" PreviewDrop="OnDrop"
         Background="{DynamicResource AppBackgroundBrush}" Foreground="{DynamicResource PrimaryTextBrush}">
     <Window.Resources>
         <Style x:Key="CaptionStyle" TargetType="TextBlock">
@@ -39,8 +39,8 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="30" Height="30" CornerRadius="8" Background="#176BDE">
-                        <TextBlock Text="⌁" Foreground="White" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Border Width="30" Height="30" CornerRadius="8" Background="Transparent">
+                        <Image Source="Assets/GpxView.png" Width="30" Height="30" Stretch="Uniform" />
                     </Border>
                     <TextBlock Text="GpxView" Margin="8,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="16" />
                 </StackPanel>
@@ -48,8 +48,11 @@
                            Text="拖入 GPX、KML、KMZ 或 FIT 文件" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" TextTrimming="CharacterEllipsis" />
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
                     <TextBlock Text="底图" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" Margin="0,0,6,0" />
-                    <ComboBox x:Name="MapStyleBox" Width="112" Height="30" FontSize="12" SelectedIndex="0" SelectionChanged="OnMapStyleChanged">
+                    <ComboBox x:Name="MapStyleBox" Width="128" Height="30" FontSize="12" SelectedIndex="0" SelectionChanged="OnMapStyleChanged">
                         <ComboBoxItem Content="OSM 标准" />
+                        <ComboBoxItem Content="天地图街道" />
+                        <ComboBoxItem Content="天地图影像" />
+                        <ComboBoxItem Content="天地图地形" />
                         <ComboBoxItem Content="Esri 卫星" />
                         <ComboBoxItem Content="OpenTopoMap" />
                         <ComboBoxItem Content="OSM 人道主义" />
@@ -75,7 +78,17 @@
         </Border>
 
         <Border Grid.Row="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
-            <TextBlock x:Name="StatusText" Text="就绪" Margin="16,0" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
+            <Grid Margin="14,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="StatusText" Text="就绪" VerticalAlignment="Center"
+                           Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                <TextBlock x:Name="StatusSummaryText" Grid.Column="1" Visibility="Collapsed" Margin="18,0,0,0"
+                           VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11"
+                           FontWeight="SemiBold" Typography.NumeralAlignment="Tabular" />
+            </Grid>
         </Border>
     </Grid>
 </Window>

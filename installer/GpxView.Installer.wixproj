@@ -1,0 +1,17 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <PropertyGroup>
+    <Platform>x64</Platform>
+    <OutputType>Package</OutputType>
+    <OutputName>GpxView-0.1.0-win-x64</OutputName>
+    <OutputPath>$(MSBuildThisFileDirectory)..\artifacts\installer\</OutputPath>
+    <PublishDir>$(MSBuildThisFileDirectory)..\artifacts\publish\win-x64</PublishDir>
+    <DefineConstants>PublishDir=$(PublishDir);SourceRoot=$(MSBuildThisFileDirectory)..</DefineConstants>
+  </PropertyGroup>
+
+  <Target Name="EnsurePublishedApp" BeforeTargets="Compile">
+    <Error Condition="!Exists('$(PublishDir)\GpxView.exe')"
+           Text="Published app not found. Run: dotnet publish src\GpxView.App\GpxView.App.csproj -p:PublishProfile=win-x64" />
+    <Error Condition="Exists('$(PublishDir)\GpxView.exe.WebView2')"
+           Text="WebView2 user data was found in the publish directory. Close GpxView and republish before building the installer." />
+  </Target>
+</Project>

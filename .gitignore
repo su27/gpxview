@@ -7,3 +7,5 @@
 *.suo
 TestResults/
 artifacts/
+
+src/GpxView.App/MapServices.local.json

@@ -1,0 +1,90 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="GpxView"
+           Manufacturer="su27"
+           Version="0.1.0"
+           UpgradeCode="{1DB8158B-D4FD-4AE8-AB5B-4B7A77D1EC92}"
+           Scope="perMachine"
+           InstallerVersion="500"
+           Language="1033">
+    <SummaryInformation Description="GpxView track viewer installer" Manufacturer="su27" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of GpxView is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="GpxViewIcon" SourceFile="$(var.SourceRoot)\src\GpxView.App\Assets\GpxView.ico" />
+    <Property Id="ARPPRODUCTICON" Value="GpxViewIcon" />
+    <SetProperty Id="ARPINSTALLLOCATION" Value="[INSTALLFOLDER]" After="CostFinalize" Sequence="both" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/su27/gpxview" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="GpxView" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="GpxViewProgramsFolder" Name="GpxView" />
+    </StandardDirectory>
+
+    <Feature Id="MainFeature" Title="GpxView" Level="1">
+      <ComponentGroupRef Id="PublishedAppFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="FileAssociations" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <ComponentGroup Id="PublishedAppFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(var.PublishDir)\**" />
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <DirectoryRef Id="GpxViewProgramsFolder">
+      <Component Id="StartMenuShortcut" Guid="{7AFD32F1-B116-42D4-A457-164E45D3300A}" Bitness="always64">
+        <Shortcut Id="GpxViewStartMenuShortcut"
+                  Name="GpxView"
+                  Description="View GPX, KML, KMZ and FIT tracks"
+                  Target="[INSTALLFOLDER]GpxView.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="GpxViewIcon" />
+        <RemoveFolder Id="RemoveProgramMenuFolder" Directory="GpxViewProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\GpxView"
+                       Name="StartMenuShortcut"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="FileAssociations" Guid="{ED875F24-F78C-489E-B199-D8B018FEC1C0}" Bitness="always64">
+        <RegistryValue Root="HKLM" Key="Software\Classes\GpxView.Track" Type="string" Value="GPS track file" KeyPath="yes" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\GpxView.Track" Name="FriendlyTypeName" Type="string" Value="GPS track file" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\GpxView.Track\DefaultIcon" Type="string" Value="[INSTALLFOLDER]GpxView.exe,0" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\GpxView.Track\shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]GpxView.exe&quot; &quot;%1&quot;" />
+
+        <RegistryValue Root="HKLM" Key="Software\Classes\.gpx" Type="string" Value="GpxView.Track" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.gpx\OpenWithProgids" Name="GpxView.Track" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.kml" Type="string" Value="GpxView.Track" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.kml\OpenWithProgids" Name="GpxView.Track" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.kmz" Type="string" Value="GpxView.Track" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.kmz\OpenWithProgids" Name="GpxView.Track" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.fit" Type="string" Value="GpxView.Track" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.fit\OpenWithProgids" Name="GpxView.Track" Type="string" Value="" />
+
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\GpxView.exe" Name="FriendlyAppName" Type="string" Value="GpxView" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\GpxView.exe\shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]GpxView.exe&quot; &quot;%1&quot;" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\GpxView.exe\SupportedTypes" Name=".gpx" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\GpxView.exe\SupportedTypes" Name=".kml" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\GpxView.exe\SupportedTypes" Name=".kmz" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\GpxView.exe\SupportedTypes" Name=".fit" Type="string" Value="" />
+
+        <RegistryValue Root="HKLM" Key="Software\GpxView\Capabilities" Name="ApplicationName" Type="string" Value="GpxView" />
+        <RegistryValue Root="HKLM" Key="Software\GpxView\Capabilities" Name="ApplicationDescription" Type="string" Value="View GPX, KML, KMZ and FIT tracks" />
+        <RegistryValue Root="HKLM" Key="Software\GpxView\Capabilities\FileAssociations" Name=".gpx" Type="string" Value="GpxView.Track" />
+        <RegistryValue Root="HKLM" Key="Software\GpxView\Capabilities\FileAssociations" Name=".kml" Type="string" Value="GpxView.Track" />
+        <RegistryValue Root="HKLM" Key="Software\GpxView\Capabilities\FileAssociations" Name=".kmz" Type="string" Value="GpxView.Track" />
+        <RegistryValue Root="HKLM" Key="Software\GpxView\Capabilities\FileAssociations" Name=".fit" Type="string" Value="GpxView.Track" />
+        <RegistryValue Root="HKLM" Key="Software\RegisteredApplications" Name="GpxView" Type="string" Value="Software\GpxView\Capabilities" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix>

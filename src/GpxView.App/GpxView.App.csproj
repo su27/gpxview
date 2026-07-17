@@ -14,14 +14,31 @@
     <Content Include="Web\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Assets\GpxView.ico" />
+    <Resource Include="Assets\GpxView.png" />
+    <None Update="MapServices.local.json" Condition="Exists('MapServices.local.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>GpxView.App</RootNamespace>
+    <AssemblyName>GpxView</AssemblyName>
+    <Product>GpxView</Product>
+    <Description>Fast, lightweight GPX, KML, KMZ and FIT track viewer for Windows.</Description>
+    <Authors>su27</Authors>
+    <Company>su27</Company>
+    <Version>0.1.0</Version>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\GpxView.ico</ApplicationIcon>
   </PropertyGroup>
 
 </Project>
