@@ -34,7 +34,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         var tiandituEnabled = mapServices.Tianditu is { Tk.Length: > 0, Sk.Length: > 0 };
-        for (var index = 1; index <= 3; index++)
+        for (var index = 2; index <= 4; index++)
         {
             if (MapStyleBox.Items[index] is ComboBoxItem item)
             {
@@ -286,7 +286,6 @@ public partial class MainWindow : Window
             var recentEntry = RegisterRecentTrack(path, document, statistics);
             SendToMap(document, statistics);
             SendCurrentPlaceName();
-            FileNameText.Text = document.Name;
             Title = $"{document.Name} — GpxView";
             StatusText.Text = Path.GetFileName(path);
             StatusSummaryText.Text = BuildStatusSummary(document, statistics);
@@ -328,13 +327,14 @@ public partial class MainWindow : Window
         if (!webReady || MapView.CoreWebView2 is null) return;
         var mapStyle = MapStyleBox.SelectedIndex switch
         {
-            1 => "tianditu-street",
-            2 => "tianditu-imagery",
-            3 => "tianditu-terrain",
-            4 => "satellite",
-            5 => "topo",
-            6 => "humanitarian",
-            _ => "osm"
+            1 => "osm",
+            2 => "tianditu-street",
+            3 => "tianditu-imagery",
+            4 => "tianditu-terrain",
+            5 => "satellite",
+            6 => "topo",
+            7 => "humanitarian",
+            _ => "openfreemap"
         };
         var message = new { Type = "setMapStyle", MapStyle = mapStyle };
         MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));

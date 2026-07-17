@@ -30,48 +30,34 @@
 
         <Border Grid.Row="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
             <Grid Margin="12,6">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="30" Height="30" CornerRadius="8" Background="Transparent">
-                        <Image Source="Assets/GpxView.png" Width="30" Height="30" Stretch="Uniform" />
-                    </Border>
-                    <TextBlock Text="GpxView" Margin="8,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="16" />
+                    <Button Content="打开文件" Padding="12,5" Margin="0,0,8,0" FontSize="12" Click="OnOpenFile" />
+                    <Button Content="最近文件" Padding="11,5" Margin="0,0,16,0" FontSize="12"
+                            ToolTip="显示最近打开的轨迹" Click="OnRecentFiles" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="底图" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" Margin="0,0,6,0" />
+                        <ComboBox x:Name="MapStyleBox" Width="148" Height="30" FontSize="12" SelectedIndex="0" SelectionChanged="OnMapStyleChanged">
+                            <ComboBoxItem Content="OpenFreeMap 现代" />
+                            <ComboBoxItem Content="OSM 经典" />
+                            <ComboBoxItem Content="天地图街道" />
+                            <ComboBoxItem Content="天地图影像" />
+                            <ComboBoxItem Content="天地图地形" />
+                            <ComboBoxItem Content="Esri 卫星" />
+                            <ComboBoxItem Content="OpenTopoMap" />
+                            <ComboBoxItem Content="OSM 人道主义" />
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="源坐标" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" Margin="0,0,6,0" />
+                        <ComboBox x:Name="CoordinateBox" Width="102" Height="30" FontSize="12" SelectedIndex="0" SelectionChanged="OnCoordinateChanged">
+                            <ComboBoxItem Content="WGS84（标准）" />
+                            <ComboBoxItem Content="GCJ-02" />
+                            <ComboBoxItem Content="BD-09" />
+                        </ComboBox>
+                    </StackPanel>
+                    <Button x:Name="ThemeButton" Width="30" Height="30" Padding="0"
+                            Content="◐" FontSize="15" ToolTip="主题：跟随系统（点击切换）" Click="OnThemeToggle" />
                 </StackPanel>
-                <TextBlock x:Name="FileNameText" Grid.Column="1" Margin="18,0" VerticalAlignment="Center"
-                           Text="拖入 GPX、KML、KMZ 或 FIT 文件" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" TextTrimming="CharacterEllipsis" />
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <TextBlock Text="底图" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" Margin="0,0,6,0" />
-                    <ComboBox x:Name="MapStyleBox" Width="128" Height="30" FontSize="12" SelectedIndex="0" SelectionChanged="OnMapStyleChanged">
-                        <ComboBoxItem Content="OSM 标准" />
-                        <ComboBoxItem Content="天地图街道" />
-                        <ComboBoxItem Content="天地图影像" />
-                        <ComboBoxItem Content="天地图地形" />
-                        <ComboBoxItem Content="Esri 卫星" />
-                        <ComboBoxItem Content="OpenTopoMap" />
-                        <ComboBoxItem Content="OSM 人道主义" />
-                    </ComboBox>
-                </StackPanel>
-                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <TextBlock Text="源坐标" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" Margin="0,0,6,0" />
-                    <ComboBox x:Name="CoordinateBox" Width="102" Height="30" FontSize="12" SelectedIndex="0" SelectionChanged="OnCoordinateChanged">
-                        <ComboBoxItem Content="WGS84（标准）" />
-                        <ComboBoxItem Content="GCJ-02" />
-                        <ComboBoxItem Content="BD-09" />
-                    </ComboBox>
-                </StackPanel>
-                <Button Grid.Column="4" Content="最近轨迹" Padding="11,5" Margin="0,0,8,0" FontSize="12"
-                        ToolTip="显示最近打开的轨迹" Click="OnRecentFiles" />
-                <Button x:Name="ThemeButton" Grid.Column="5" Width="30" Height="30" Padding="0" Margin="0,0,8,0"
-                        Content="◐" FontSize="15" ToolTip="主题：跟随系统（点击切换）" Click="OnThemeToggle" />
-                <Button Grid.Column="6" Content="打开文件" Padding="12,5" FontSize="12" Click="OnOpenFile" />
             </Grid>
         </Border>
 

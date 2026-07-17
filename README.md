@@ -5,7 +5,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 ## 功能
 
 - 打开、拖放或从 Windows 文件资源管理器启动 `.gpx`、`.kml`、`.kmz`、`.fit`
-- OSM 标准、天地图街道/影像/地形、Esri 卫星、OpenTopoMap、OSM 人道主义底图切换
+- 默认使用 OpenFreeMap 现代矢量地图，并可切换 OSM 经典、天地图街道/影像/地形、Esri 卫星、OpenTopoMap、OSM 人道主义
 - 地图铺满内容区，摘要和图表以半透明背景模糊层覆盖在地图上，可一键收起
 - 状态栏持续显示文件格式、距离、累计爬升、总用时和轨迹点数
 - 城市级轨迹地名识别，并在当前摘要和最近轨迹中显示
@@ -25,7 +25,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 构建出的 64 位 MSI 位于：
 
 ```text
-artifacts\installer\GpxView-0.1.0-win-x64.msi
+artifacts\installer\GpxView-0.1.1-win-x64.msi
 ```
 
 安装器将 GpxView 安装到 Program Files，创建开始菜单入口，并向 Windows 注册 GPX、KML、KMZ、FIT 的打开方式和“默认应用”能力；不创建桌面快捷方式。安装包包含 .NET 10 桌面运行时，终端用户无需另行安装 .NET。现代 Windows 通常已包含 Microsoft Edge WebView2 Runtime；若该组件缺失，应用会显示修复提示。
@@ -35,7 +35,7 @@ artifacts\installer\GpxView-0.1.0-win-x64.msi
 - .NET 10 LTS / C# / WPF Fluent theme
 - Microsoft WebView2
 - 随应用本地分发的 MapLibre GL JS 5.6.2
-- OSM 系、天地图与 Esri 栅格地图服务
+- OpenFreeMap/OpenMapTiles 矢量地图，以及 OSM 系、天地图与 Esri 栅格地图服务
 - Garmin.FIT.Sdk 21.205.0
 - WiX Toolset SDK 5.0.2
 - xUnit
@@ -99,7 +99,7 @@ dotnet build installer\GpxView.Installer.wixproj -c Release
 
 ```text
 artifacts\publish\win-x64\
-artifacts\installer\GpxView-0.1.0-win-x64.msi
+artifacts\installer\GpxView-0.1.1-win-x64.msi
 ```
 
 应用图标如需从可编辑源重新生成：
@@ -110,11 +110,12 @@ dotnet run --project tools\GpxView.IconGenerator\GpxView.IconGenerator.csproj --
 
 ## 坐标约定
 
-GPX、KML 和 FIT 按规范默认视为 WGS84，直接显示在 OSM 和天地图球面墨卡托图层上，不做火星坐标偏移。如果某个第三方文件实际写入了 GCJ-02 或 BD-09，可在窗口顶部选择对应“源坐标”，应用只在内存中纠正为 WGS84，不修改原文件。
+GPX、KML 和 FIT 按规范默认视为 WGS84，直接显示在 OpenFreeMap、OSM 和天地图球面墨卡托图层上，不做火星坐标偏移。如果某个第三方文件实际写入了 GCJ-02 或 BD-09，可在窗口顶部选择对应“源坐标”，应用只在内存中纠正为 WGS84，不修改原文件。
 
 ## 地图服务
 
-- OSM 标准：OpenStreetMap Foundation 公共瓦片服务。
+- OpenFreeMap 现代：默认使用 Liberty 矢量样式，基于 OpenMapTiles 与 OpenStreetMap 数据，无需 API Key。
+- OSM 经典：OpenStreetMap Foundation 公共栅格瓦片服务。
 - 天地图街道：`vec_w` 底图叠加 `cva_w` 中文注记。
 - 天地图影像：`img_w` 影像叠加 `cia_w` 中文注记。
 - 天地图地形：`ter_w` 地形晕渲叠加 `cta_w` 中文注记。
@@ -122,4 +123,4 @@ GPX、KML 和 FIT 按规范默认视为 WGS84，直接显示在 OSM 和天地图
 - OpenTopoMap：OSM 数据与 SRTM 地形风格。
 - OSM 人道主义：OSM France 托管的 HOT 风格瓦片。
 
-应用会在地图上显示各服务要求的署名。天地图服务需要有效 Key，并受其服务条款和调用额度约束；Esri 影像受 Esri 及其数据提供方条款约束；OSMF、OpenTopoMap 和 OSM France 的公共瓦片也不是无限制 CDN。不得批量下载或离线预取，公开大规模分发前应分别核对服务方的最新政策并选择有明确授权和容量保障的服务。
+应用会在地图上显示各服务要求的署名。OpenFreeMap 公共实例无需 Key、允许商业使用且当前不限制地图浏览或请求数，但按原样提供、没有 SLA，并可能停止或变更服务；需要稳定保障时应考虑自托管。天地图服务需要有效 Key，并受其服务条款和调用额度约束；Esri 影像受 Esri 及其数据提供方条款约束；OSMF、OpenTopoMap 和 OSM France 的公共瓦片也不是无限制 CDN。不得批量下载或离线预取，公开大规模分发前应分别核对服务方的最新政策并选择有明确授权和容量保障的服务。
