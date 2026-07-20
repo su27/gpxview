@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     private bool webReady;
     private DisplayTheme selectedTheme = DisplayTheme.System;
     private bool effectiveDarkTheme;
+    private bool terrainEnabled;
 
     public MainWindow()
     {
@@ -112,6 +113,13 @@ public partial class MainWindow : Window
             _ => DisplayTheme.System
         };
         ApplyTheme();
+    }
+
+    private void OnTerrainToggle(object sender, RoutedEventArgs e)
+    {
+        terrainEnabled = !terrainEnabled;
+        UpdateTerrainButton();
+        SendTerrainMode();
     }
 
     private void OnSystemPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
@@ -340,6 +348,26 @@ public partial class MainWindow : Window
         MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
     }
 
+    private void SendTerrainMode()
+    {
+        if (!webReady || MapView.CoreWebView2 is null) return;
+        var message = new { Type = "setTerrainEnabled", Enabled = terrainEnabled };
+        MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
+    }
+
+    private void UpdateTerrainButton()
+    {
+        TerrainButton.Content = terrainEnabled ? "2D" : "3D";
+        TerrainButton.ToolTip = terrainEnabled ? "切换到二维地图" : "切换到三维地形";
+    }
+
+    private void SetTerrainState(bool enabled, string? error)
+    {
+        terrainEnabled = enabled;
+        UpdateTerrainButton();
+        if (!string.IsNullOrWhiteSpace(error)) StatusText.Text = error;
+    }
+
     private void SendToMap(TrackDocument document, TrackStatistics statistics)
     {
         if (!webReady || MapView.CoreWebView2 is null) return;
@@ -356,6 +384,9 @@ public partial class MainWindow : Window
         var segments = new List<WebSegment>();
         var distanceMeters = 0d;
         var globalIndex = 0;
+        var segmentIndex = 0;
+        var firstTimestamp = document.Segments.SelectMany(segment => segment.Points)
+            .Select(point => point.Timestamp).FirstOrDefault(timestamp => timestamp.HasValue);
 
         foreach (var segment in document.Segments)
         {
@@ -381,15 +412,24 @@ public partial class MainWindow : Window
 
                 if (globalIndex % mapStride == 0 || index == segment.Points.Count - 1)
                     coordinates.Add([point.Longitude, point.Latitude]);
+                double? elapsedSeconds = firstTimestamp is { } start && point.Timestamp is { } timestamp
+                    ? Math.Max(0, (timestamp - start).TotalSeconds)
+                    : null;
                 profileCandidates.Add(new WebPoint(point.Latitude, point.Longitude, distanceMeters / 1000,
                     point.ElevationMeters, speedMetersPerSecond is { } speed ? speed * 3.6 : null,
-                    point.HeartRateBpm, point.CadenceRpm, point.PowerWatts));
+                    point.HeartRateBpm, point.CadenceRpm, point.PowerWatts, segmentIndex, elapsedSeconds));
             }
             if (coordinates.Count > 0) segments.Add(new WebSegment(coordinates));
+            segmentIndex++;
         }
 
         var profileStride = Math.Max(1, (int)Math.Ceiling(profileCandidates.Count / (double)maximumProfilePoints));
-        var profile = profileCandidates.Where((_, index) => index % profileStride == 0 || index == profileCandidates.Count - 1).ToArray();
+        var profile = profileCandidates.Where((point, index) =>
+            index % profileStride == 0
+            || index == 0
+            || index == profileCandidates.Count - 1
+            || index > 0 && profileCandidates[index - 1].SegmentIndex != point.SegmentIndex
+            || index + 1 < profileCandidates.Count && profileCandidates[index + 1].SegmentIndex != point.SegmentIndex).ToArray();
         return new WebPayload("loadTrack", document.Name, segments, profile, BuildWebSummary(document, statistics));
     }
 
@@ -485,5 +525,6 @@ public partial class MainWindow : Window
         string? Speed, string? HeartRate, string? CadencePower);
     private sealed record WebSegment(IReadOnlyList<double[]> Coordinates);
     private sealed record WebPoint(double Latitude, double Longitude, double DistanceKm, double? ElevationMeters,
-        double? SpeedKmh, int? HeartRateBpm, int? CadenceRpm, double? PowerWatts);
+        double? SpeedKmh, int? HeartRateBpm, int? CadenceRpm, double? PowerWatts,
+        int SegmentIndex, double? ElapsedSeconds);
 }

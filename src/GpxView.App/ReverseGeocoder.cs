@@ -18,7 +18,7 @@ internal sealed class ReverseGeocoder : IDisposable
                                && uri.Scheme is "http" or "https";
         this.endpoint = endpoint;
         httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GpxView/0.1.1 (+https://github.com/su27/gpxview)");
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GpxView/0.1.3 (+https://github.com/su27/gpxview)");
         httpClient.DefaultRequestHeaders.AcceptLanguage.ParseAdd("zh-CN, zh;q=0.9, en;q=0.5");
     }
 

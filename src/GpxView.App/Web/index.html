@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://*.tianditu.gov.cn https://tiles.openfreemap.org; connect-src https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://*.tianditu.gov.cn https://tiles.openfreemap.org; worker-src blob:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://*.tianditu.gov.cn https://tiles.openfreemap.org https://tiles.mapterhorn.com; connect-src https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://*.tianditu.gov.cn https://tiles.openfreemap.org https://tiles.mapterhorn.com; worker-src blob:;">
   <title>GpxView Map</title>
   <link rel="stylesheet" href="vendor/maplibre-gl/5.6.2/maplibre-gl.css">
   <script src="vendor/maplibre-gl/5.6.2/maplibre-gl.js"></script>
@@ -17,16 +17,18 @@
     #detailsToggle{position:absolute;z-index:6;left:172px;top:20px;width:30px;height:30px;padding:6px;border:1px solid var(--glass-border);border-radius:9px;background:var(--chart-glass);color:var(--muted);box-shadow:inset 0 0 0 1px var(--inner-border),0 3px 12px var(--shadow);backdrop-filter:blur(14px) saturate(135%);cursor:pointer;transition:left .30s cubic-bezier(.2,.8,.2,1),background-color .18s,color .18s}#detailsToggle:hover{color:var(--text);background:var(--glass)}#detailsToggle:focus-visible{outline:2px solid #176bde;outline-offset:2px}#detailsToggle svg{display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.45;stroke-linecap:round;stroke-linejoin:round}#detailsToggle .panelFrame{opacity:.72}#detailsToggle .panelArrow{stroke-width:1.9}.expandDetailsIcon{display:none!important}body.details-hidden #detailsToggle{left:14px}body.details-hidden .collapseDetailsIcon{display:none!important}body.details-hidden .expandDetailsIcon{display:block!important}
     #summaryTitle{margin:0;font-size:15px;line-height:20px;font-weight:650}#summaryFormat{margin-top:3px;color:var(--muted);font-size:11px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     #summaryMetrics{margin-top:6px}.metric{margin-top:8px}.metricLabel{display:block;color:var(--label);font-size:10px;line-height:14px}.metricValue{display:block;margin-top:1px;color:var(--text);font-size:15px;line-height:20px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
-    #chartPanel{position:absolute;z-index:4;left:14px;right:14px;bottom:14px;height:164px;border-radius:13px;background:var(--chart-glass);padding:8px 13px 7px;overflow:hidden;will-change:transform,opacity;transition:transform .34s cubic-bezier(.2,.8,.2,1),opacity .24s ease}
+    #chartPanel{position:absolute;z-index:4;left:14px;right:14px;bottom:14px;height:192px;border-radius:13px;background:var(--chart-glass);padding:8px 13px 7px;overflow:hidden;will-change:transform,opacity;transition:transform .34s cubic-bezier(.2,.8,.2,1),opacity .24s ease}#chartPanel.playback-only{height:46px;padding-top:9px}#chartPanel.playback-only #chartHeader,#chartPanel.playback-only #chart{display:none}
     body.details-hidden #summaryPanel{transform:translateX(calc(-100% - 28px));opacity:0}body.details-hidden #chartPanel{transform:translateY(calc(100% + 28px));opacity:0;pointer-events:none}
-    #chartHeader{height:22px;display:flex;align-items:center;gap:8px;min-width:0}#chartTitle{flex:none;font-weight:650;font-size:13px}#seriesControls{display:flex;align-items:center;gap:4px;min-width:0}.seriesBase,.seriesToggle{height:20px;display:inline-flex;align-items:center;gap:4px;border-radius:10px;padding:0 7px;font:11px "Segoe UI",sans-serif;white-space:nowrap}.seriesBase{color:var(--text)}.seriesToggle{border:1px solid var(--inner-border);background:rgba(127,127,127,.08);color:var(--muted);cursor:pointer}.seriesToggle:hover{background:rgba(127,127,127,.16)}.seriesToggle.active{border-color:var(--series-color);color:var(--series-color);background:rgba(127,127,127,.14);font-weight:600}.seriesDot{width:7px;height:7px;border-radius:50%;background:var(--series-color);box-shadow:0 0 0 1px rgba(255,255,255,.35)}#chartMeta{margin-left:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}#chart{width:100%;height:127px;display:block;cursor:crosshair}
+    #chartHeader{height:22px;display:flex;align-items:center;gap:8px;min-width:0}#chartTitle{flex:none;font-weight:650;font-size:13px}#seriesControls{display:flex;align-items:center;gap:4px;min-width:0}.seriesBase,.seriesToggle{height:20px;display:inline-flex;align-items:center;gap:4px;border-radius:10px;padding:0 7px;font:11px "Segoe UI",sans-serif;white-space:nowrap}.seriesBase{color:var(--text)}.seriesToggle{border:1px solid var(--inner-border);background:rgba(127,127,127,.08);color:var(--muted);cursor:pointer}.seriesToggle:hover{background:rgba(127,127,127,.16)}.seriesToggle.active{border-color:var(--series-color);color:var(--series-color);background:rgba(127,127,127,.14);font-weight:600}.seriesDot{width:7px;height:7px;border-radius:50%;background:var(--series-color);box-shadow:0 0 0 1px rgba(255,255,255,.35)}#trackColorControl{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:11px;white-space:nowrap}#trackColorSelect,#playbackSpeed{height:22px;border:1px solid var(--inner-border);border-radius:7px;background:rgba(127,127,127,.10);color:var(--text);font:11px "Segoe UI",sans-serif;outline:none}#trackColorSelect{width:86px;padding:0 4px}#trackColorSelect:focus-visible,#playbackSpeed:focus-visible{border-color:#176bde;box-shadow:0 0 0 1px #176bde}#trackColorLegend{display:inline-block;width:48px;height:6px;border-radius:3px;background:#176bde;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}#chartMeta{margin-left:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}#playbackBar{height:28px;display:flex;align-items:center;gap:8px;min-width:0}#playbackToggle,#playbackFollow{height:23px;border:1px solid var(--inner-border);border-radius:7px;background:rgba(127,127,127,.09);color:var(--text);font:11px "Segoe UI",sans-serif;cursor:pointer}#playbackToggle{width:27px;padding:0;font-size:12px}#playbackFollow{padding:0 8px;color:var(--muted)}#playbackToggle:hover,#playbackFollow:hover{background:rgba(127,127,127,.17)}#playbackFollow.active{border-color:#176bde;background:rgba(23,107,222,.14);color:#176bde;font-weight:600}#playbackToggle:disabled{cursor:default;opacity:.45}#playbackRange{min-width:90px;flex:1;height:18px;accent-color:#176bde;cursor:pointer}#playbackPosition{min-width:106px;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap}#playbackSpeed{width:72px;padding:0 3px}#chart{width:100%;height:127px;display:block;cursor:crosshair}
+    #terrainReadout{position:absolute;z-index:7;left:0;top:0;padding:5px 8px;border-radius:8px;color:var(--text);font-size:11px;font-variant-numeric:tabular-nums;pointer-events:none;white-space:nowrap;transform:translate(12px,12px)}
     #recentScrim{position:absolute;z-index:18;inset:0;background:rgba(15,23,32,.16);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
     #recentPanel{position:absolute;z-index:19;left:50%;top:50%;transform:translate(-50%,-50%);width:min(900px,calc(100% - 40px));max-height:calc(100% - 40px);border-radius:16px;padding:0;overflow:hidden;display:flex;flex-direction:column}
     #recentHeader{display:flex;align-items:center;gap:10px;padding:15px 17px 13px;border-bottom:1px solid var(--inner-border)}#recentTitle{min-width:0;flex:1;margin:0;font-size:18px;line-height:24px;font-weight:650}#recentOpenButton,#recentCloseButton{height:31px;border:1px solid var(--inner-border);border-radius:8px;background:rgba(127,127,127,.08);color:var(--text);font:12px "Segoe UI",sans-serif;cursor:pointer}#recentOpenButton{padding:0 12px;background:#176bde;color:#fff;border-color:#176bde;font-weight:600}#recentCloseButton{width:31px;padding:0;font-size:18px;line-height:27px;color:var(--muted)}#recentOpenButton:hover{background:#125fc8}#recentCloseButton:hover{background:rgba(127,127,127,.16);color:var(--text)}
     #recentList{padding:8px;overflow:auto;overscroll-behavior:contain}.recentItem{width:100%;min-height:88px;display:grid;grid-template-columns:132px minmax(190px,1fr) 176px;align-items:center;gap:14px;padding:9px;border:0;border-radius:11px;background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer}.recentItem:hover,.recentItem:focus-visible{background:rgba(23,107,222,.10);outline:none}.recentItem:focus-visible{box-shadow:inset 0 0 0 2px #176bde}.previewFrame{height:68px;border:1px solid var(--inner-border);border-radius:9px;background:rgba(127,127,127,.06);overflow:hidden}.previewFrame svg{display:block;width:100%;height:100%}.trackPreviewLine{fill:none;stroke:#176bde;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.elevationPreviewArea{fill:rgba(23,107,222,.14)}.elevationPreviewLine{fill:none;stroke:#176bde;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.recentInfo{min-width:0}.recentFileName{font-size:14px;line-height:20px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.recentPlace{margin-top:5px;color:var(--text);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.recentMeta{margin-top:5px;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.elevationPreviewWrap{min-width:0}.noElevation{height:55px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px}.recentEmpty{padding:46px 20px 50px;text-align:center;color:var(--muted)}.recentEmpty strong{display:block;color:var(--text);font-size:15px;margin-bottom:5px}.recentFooter{padding:9px 17px 11px;border-top:1px solid var(--inner-border);color:var(--muted);font-size:10px}.recentFooter a{color:inherit}
-    .maplibregl-ctrl-attrib{font-size:10px}.maplibregl-ctrl-group{border-radius:8px!important}
+    .maplibregl-ctrl-attrib{font-size:10px}.maplibregl-ctrl-group{border-radius:8px!important}.maplibregl-ctrl-bottom-left{transition:bottom .28s ease}body.chart-visible:not(.details-hidden) .maplibregl-ctrl-bottom-left{bottom:200px}body.chart-visible.compact-chart:not(.details-hidden) .maplibregl-ctrl-bottom-left{bottom:54px}.maplibregl-ctrl-scale{border-color:var(--text)!important;border-top:0!important;background:var(--chart-glass)!important;color:var(--text)!important;border-radius:0 0 3px 3px}
+    .gpxviewCompass{width:38px;height:38px;border-radius:10px;box-shadow:0 1px 5px var(--shadow);overflow:visible}.gpxviewCompass button{display:flex;width:38px;height:38px;align-items:center;justify-content:center;padding:4px;border:1px solid var(--glass-border);border-radius:10px;background:var(--chart-glass);color:var(--text);box-shadow:inset 0 0 0 1px var(--inner-border);backdrop-filter:blur(14px) saturate(135%);-webkit-backdrop-filter:blur(14px) saturate(135%);cursor:pointer}.gpxviewCompass button:hover{background:var(--glass)}.gpxviewCompass button:focus-visible{outline:2px solid #176bde;outline-offset:2px}.gpxviewCompass svg{display:block;width:28px;height:28px;transform-origin:center}.gpxviewCompassRing{fill:rgba(127,127,127,.08);stroke:var(--muted);stroke-width:1}.gpxviewCompassNorth{fill:#e5484d}.gpxviewCompassSouth{fill:var(--muted)}.gpxviewCompassHub{fill:var(--text);stroke:var(--chart-glass);stroke-width:1}
     :root[data-theme="dark"] .maplibregl-ctrl-attrib{background:rgba(32,32,32,.86);color:#ddd}:root[data-theme="dark"] .maplibregl-ctrl-attrib a{color:#8ab4f8}
-    @media(max-width:1050px){#summaryPanel{left:10px;top:10px;width:184px;padding:12px}#detailsToggle{left:156px;top:16px}body.details-hidden #detailsToggle{left:10px}#chartPanel{left:10px;right:10px;bottom:10px}}
+    @media(max-width:1050px){#summaryPanel{left:10px;top:10px;width:184px;padding:12px}#detailsToggle{left:156px;top:16px}body.details-hidden #detailsToggle{left:10px}#chartPanel{left:10px;right:10px;bottom:10px}#trackColorLegend{display:none}body.chart-visible:not(.details-hidden) .maplibregl-ctrl-bottom-left{bottom:196px}}
     @media(max-width:760px){#recentPanel{width:calc(100% - 20px);max-height:calc(100% - 20px)}.recentItem{grid-template-columns:110px minmax(0,1fr);gap:10px}.elevationPreviewWrap{display:none}}
     @media(prefers-reduced-motion:reduce){#summaryPanel,#chartPanel,#detailsToggle{transition-duration:.01ms!important}}
   </style>
@@ -34,6 +36,7 @@
 <body>
 <div id="layout">
   <div id="map"></div>
+  <div id="terrainReadout" class="glass" hidden>地面海拔 —</div>
   <div id="recentScrim" hidden></div>
   <section id="recentPanel" class="glass" aria-label="最近轨迹" hidden>
     <header id="recentHeader">
@@ -78,7 +81,27 @@
         <button id="speedToggle" class="seriesToggle" style="--series-color:#0f9d7a" data-series="speed" hidden><i class="seriesDot"></i>速度</button>
         <button id="powerToggle" class="seriesToggle" style="--series-color:#f59e0b" data-series="power" hidden><i class="seriesDot"></i>功率</button>
       </div>
+      <label id="trackColorControl">轨迹
+        <select id="trackColorSelect" aria-label="轨迹颜色">
+          <option value="uniform">统一颜色</option>
+          <option value="elevation">按海拔</option>
+          <option value="slope">按坡度</option>
+          <option value="speed">按速度</option>
+          <option value="heartRate">按心率</option>
+          <option value="power">按功率</option>
+        </select>
+      </label>
+      <span id="trackColorLegend" title="轨迹颜色范围" hidden></span>
       <div id="chartMeta">暂无数据</div>
+    </div>
+    <div id="playbackBar" hidden>
+      <button id="playbackToggle" type="button" title="播放轨迹" aria-label="播放轨迹" disabled>▶</button>
+      <input id="playbackRange" type="range" min="0" max="1000" step="1" value="0" aria-label="轨迹回放进度">
+      <span id="playbackPosition">00:00 / 00:00</span>
+      <select id="playbackSpeed" aria-label="预计播放时长上限" title="预计播放时长上限">
+        <option value="300">5分钟内</option><option value="120" selected>2分钟内</option><option value="60">1分钟内</option><option value="30">30秒内</option>
+      </select>
+      <button id="playbackFollow" type="button" title="让地图跟随回放位置" aria-pressed="false">跟随</button>
     </div>
     <canvas id="chart"></canvas>
   </section>
@@ -94,6 +117,7 @@
   }
   const tiandituAttribution='© <a href="https://www.tianditu.gov.cn/" target="_blank">天地图</a>';
   const openFreeMapId='openfreemap',openFreeMapStyle='https://tiles.openfreemap.org/styles/liberty';
+  const terrainSourceId='gpxview-terrain',terrainReliefId='gpxview-terrain-relief',terrainHillshadeId='gpxview-terrain-hillshade',terrainTileJsonUrl='https://tiles.mapterhorn.com/tilejson.json',maxTerrainPitch=75,defaultTerrainPitch=65;
   const rasterMaps={
     osm:{layers:[rasterLayer(['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],19,'© OpenStreetMap contributors')]},
     ...(tiandituConfigured?{
@@ -119,43 +143,198 @@
     });
     return rasterStyle;
   }
-  const map=new maplibregl.Map({container:'map',style:openFreeMapStyle,center:[105,35],zoom:2,attributionControl:false});
+  class CompassControl{
+    onAdd(map){
+      this.map=map;
+      this.container=document.createElement('div');this.container.className='maplibregl-ctrl gpxviewCompass';
+      this.button=document.createElement('button');this.button.type='button';this.button.id='compassButton';
+      this.button.innerHTML='<svg viewBox="0 0 32 32" aria-hidden="true"><circle class="gpxviewCompassRing" cx="16" cy="16" r="13"/><path class="gpxviewCompassSouth" d="M16 27 11.8 14.8 16 17.2 20.2 14.8Z"/><path class="gpxviewCompassNorth" d="M16 5 20.2 17.2 16 14.8 11.8 17.2Z"/><circle class="gpxviewCompassHub" cx="16" cy="16" r="2"/></svg>';
+      this.needle=this.button.querySelector('svg');
+      this.update=()=>{
+        const bearing=this.map.getBearing(),normalized=(bearing+360)%360,directions=['北','东北','东','东南','南','西南','西','西北'],direction=directions[Math.round(normalized/45)%8];
+        this.needle.style.transform=`rotate(${-bearing}deg)`;
+        const label=Math.abs(bearing)<.05?'当前朝向：正北；点击回到正北':`当前朝向：${direction} ${Math.round(normalized)}°；点击回到正北`;
+        this.button.title=label;this.button.setAttribute('aria-label',label)
+      };
+      this.reset=()=>this.map.easeTo({bearing:0,duration:450});
+      this.button.addEventListener('click',this.reset);this.map.on('rotate',this.update);this.container.append(this.button);this.update();
+      return this.container
+    }
+    onRemove(){
+      this.map.off('rotate',this.update);this.button.removeEventListener('click',this.reset);this.container.remove();this.map=undefined
+    }
+  }
+  const map=new maplibregl.Map({container:'map',style:openFreeMapStyle,center:[105,35],zoom:2,maxPitch:maxTerrainPitch,pitchWithRotate:false,touchPitch:false,attributionControl:false});
+  map.addControl(new CompassControl(),'top-right');
   map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+  map.addControl(new maplibregl.ScaleControl({maxWidth:110,unit:'metric'}),'bottom-left');
   map.addControl(new maplibregl.AttributionControl({compact:true}),'top-right');
+  const attributionElement=map.getContainer().querySelector('.maplibregl-ctrl-attrib');
+  const collapseInitialAttribution=()=>{
+    if(!attributionElement?.classList.contains('maplibregl-compact')||attributionElement.classList.contains('maplibregl-attrib-empty'))return;
+    attributionElement.classList.remove('maplibregl-compact-show');attributionObserver.disconnect()
+  };
+  const attributionObserver=new MutationObserver(collapseInitialAttribution);
+  if(attributionElement){attributionObserver.observe(attributionElement,{attributes:true,attributeFilter:['class']});collapseInitialAttribution()}
   const seriesDefinitions={
     elevation:{field:'elevationMeters',label:'海拔',unit:'m',color:'#176bde',decimals:0},
     heartRate:{field:'heartRateBpm',label:'心率',unit:'bpm',color:'#e5484d',decimals:0},
     speed:{field:'speedKmh',label:'速度',unit:'km/h',color:'#0f9d7a',decimals:1},
     power:{field:'powerWatts',label:'功率',unit:'W',color:'#f59e0b',decimals:0}
   };
+  const trackColorDefinitions={
+    elevation:{field:'elevationMeters',label:'海拔',unit:'m',colors:['#2c7bb6','#00a6ca','#90eb9d','#ffff8c','#d7191c']},
+    slope:{field:'slopePercent',label:'坡度',unit:'%',colors:['#2166ac','#67a9cf','#8acb88','#fdae61','#d73027'],fixedStops:[-20,-8,0,8,20]},
+    speed:{field:'speedKmh',label:'速度',unit:'km/h',colors:['#313695','#4575b4','#74add1','#fdae61','#d73027']},
+    heartRate:{field:'heartRateBpm',label:'心率',unit:'bpm',colors:['#2c7bb6','#00a6ca','#f9d057','#f57c36','#d7191c']},
+    power:{field:'powerWatts',label:'功率',unit:'W',colors:['#5e4fa2','#3288bd','#66c2a5','#fdae61','#9e0142']}
+  };
   const selectedOverlays=new Set();
-  let profile=[],styleReady=false,styleMode='vector',activeBaseMap=openFreeMapId,darkTheme=false,availableSeries={};
-  let trackData=featureCollection([]),endData=featureCollection([]),hoverData=featureCollection([]),pendingFit=false,trackHasChartData=false;
-  const canvas=document.getElementById('chart'),meta=document.getElementById('chartMeta'),chartPanel=document.getElementById('chartPanel'),summaryPanel=document.getElementById('summaryPanel'),summaryMetrics=document.getElementById('summaryMetrics'),elevationLegend=document.getElementById('elevationLegend'),detailsToggle=document.getElementById('detailsToggle'),recentPanel=document.getElementById('recentPanel'),recentScrim=document.getElementById('recentScrim'),recentList=document.getElementById('recentList');
+  let profile=[],styleReady=false,styleMode='vector',activeBaseMap=openFreeMapId,darkTheme=false,availableSeries={},availableTrackColors={},trackColorMode='uniform';
+  let terrainEnabled=false,terrainSourceConfigPromise=null,terrainAnimateOnReady=false,styleGeneration=0;
+  let trackData=featureCollection([]),trackColorData=featureCollection([]),endData=featureCollection([]),hoverData=featureCollection([]),playbackData=featureCollection([]),pendingFit=false,trackHasChartData=false;
+  const playback={axis:[],usesTime:false,total:0,position:0,playing:false,maximumDuration:120,follow:false,frameId:0,startTimestamp:0,startPosition:0,currentIndex:-1,lastFollowTimestamp:0};
+  const canvas=document.getElementById('chart'),meta=document.getElementById('chartMeta'),chartPanel=document.getElementById('chartPanel'),summaryPanel=document.getElementById('summaryPanel'),summaryMetrics=document.getElementById('summaryMetrics'),elevationLegend=document.getElementById('elevationLegend'),detailsToggle=document.getElementById('detailsToggle'),recentPanel=document.getElementById('recentPanel'),recentScrim=document.getElementById('recentScrim'),recentList=document.getElementById('recentList'),trackColorSelect=document.getElementById('trackColorSelect'),trackColorLegend=document.getElementById('trackColorLegend'),playbackBar=document.getElementById('playbackBar'),playbackToggle=document.getElementById('playbackToggle'),playbackRange=document.getElementById('playbackRange'),playbackPosition=document.getElementById('playbackPosition'),playbackSpeed=document.getElementById('playbackSpeed'),playbackFollow=document.getElementById('playbackFollow'),terrainReadout=document.getElementById('terrainReadout');
+  const mapCanvasContainer=map.getCanvasContainer();
+  let shiftDragState=null;
+  function finishShiftDrag(event){
+    if(!shiftDragState)return;
+    if(event){event.preventDefault();event.stopImmediatePropagation()}
+    const state=shiftDragState;shiftDragState=null;mapCanvasContainer.style.cursor=state.cursor;
+    removeEventListener('mousemove',continueShiftDrag,true);removeEventListener('mouseup',finishShiftDrag,true);removeEventListener('blur',finishShiftDrag,true);
+    if(state.dragPanEnabled)map.dragPan.enable();if(state.boxZoomEnabled)map.boxZoom.enable()
+  }
+  function continueShiftDrag(event){
+    if(!shiftDragState)return;
+    if((event.buttons&1)===0){finishShiftDrag(event);return}
+    event.preventDefault();event.stopImmediatePropagation();
+    const bearing=shiftDragState.bearing+(event.clientX-shiftDragState.x)*.45,pitch=terrainEnabled?Math.max(0,Math.min(maxTerrainPitch,shiftDragState.pitch+(shiftDragState.y-event.clientY)*.3)):0;
+    map.jumpTo({bearing,pitch})
+  }
+  mapCanvasContainer.addEventListener('mousedown',event=>{
+    if(event.button!==0||!event.shiftKey||shiftDragState)return;
+    event.preventDefault();event.stopImmediatePropagation();map.stop();
+    shiftDragState={x:event.clientX,y:event.clientY,bearing:map.getBearing(),pitch:map.getPitch(),cursor:mapCanvasContainer.style.cursor,dragPanEnabled:map.dragPan.isEnabled(),boxZoomEnabled:map.boxZoom.isEnabled()};
+    if(shiftDragState.dragPanEnabled)map.dragPan.disable();if(shiftDragState.boxZoomEnabled)map.boxZoom.disable();mapCanvasContainer.style.cursor='grabbing';
+    addEventListener('mousemove',continueShiftDrag,true);addEventListener('mouseup',finishShiftDrag,true);addEventListener('blur',finishShiftDrag,true)
+  },true);
+  map.on('pitch',()=>{if(!terrainEnabled&&map.getPitch()!==0)map.jumpTo({pitch:0})});
+  let pendingTerrainPointer=null,terrainReadoutFrame=0;
+  map.on('mousemove',event=>{
+    pendingTerrainPointer=event;if(terrainReadoutFrame)return;terrainReadoutFrame=requestAnimationFrame(()=>{
+      terrainReadoutFrame=0;const pointer=pendingTerrainPointer;if(!pointer||!terrainEnabled||!map.getTerrain()){terrainReadout.hidden=true;return}
+      const elevation=map.queryTerrainElevation(pointer.lngLat);if(!Number.isFinite(elevation)){terrainReadout.hidden=true;return}
+      terrainReadout.textContent=`地面海拔 ${Math.round(elevation)} m`;terrainReadout.style.left=`${Math.max(0,Math.min(mapCanvasContainer.clientWidth-120,pointer.point.x))}px`;terrainReadout.style.top=`${Math.max(0,Math.min(mapCanvasContainer.clientHeight-38,pointer.point.y))}px`;terrainReadout.hidden=false
+    })
+  });
+  mapCanvasContainer.addEventListener('mouseleave',()=>{pendingTerrainPointer=null;terrainReadout.hidden=true});
   detailsToggle.addEventListener('click',()=>setDetailsVisible(document.body.classList.contains('details-hidden')));
   document.getElementById('recentOpenButton').addEventListener('click',()=>postHostMessage({type:'openFile'}));
   document.getElementById('recentCloseButton').addEventListener('click',()=>setRecentPanelVisible(false));
   recentScrim.addEventListener('click',()=>setRecentPanelVisible(false));
   addEventListener('keydown',event=>{if(event.key==='Escape'&&!recentPanel.hidden){setRecentPanelVisible(false);event.preventDefault()}});
   document.querySelectorAll('.seriesToggle').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.series;selectedOverlays.has(key)?selectedOverlays.delete(key):selectedOverlays.add(key);refreshSeriesControls();renderChart()}));
+  trackColorSelect.addEventListener('change',()=>{trackColorMode=trackColorSelect.value;applyTrackColorStyle()});
+  playbackToggle.addEventListener('click',()=>playback.playing?pausePlayback():startPlayback());
+  playbackRange.addEventListener('input',()=>{pausePlayback();setPlaybackPosition(playback.total*Number(playbackRange.value)/1000,false)});
+  playbackSpeed.addEventListener('change',()=>{const wasPlaying=playback.playing;pausePlayback();playback.maximumDuration=Number(playbackSpeed.value)||120;if(wasPlaying)startPlayback()});
+  playbackFollow.addEventListener('click',()=>{playback.follow=!playback.follow;playbackFollow.classList.toggle('active',playback.follow);playbackFollow.setAttribute('aria-pressed',String(playback.follow));if(playback.follow&&playback.currentIndex>=0)map.easeTo({center:[profile[playback.currentIndex].longitude,profile[playback.currentIndex].latitude],duration:350})});
   map.on('style.load',()=>{
+    const generation=++styleGeneration;
     styleReady=false;
     map.addSource('gpxview-tracks',{type:'geojson',data:featureCollection([])});
-    map.addLayer({id:'gpxview-track-shadow',type:'line',source:'gpxview-tracks',paint:{'line-color':'#fff','line-width':7,'line-opacity':.9}});
-    map.addLayer({id:'gpxview-track',type:'line',source:'gpxview-tracks',paint:{'line-color':'#176bde','line-width':4}});
+    map.addLayer({id:'gpxview-track-shadow',type:'line',source:'gpxview-tracks',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#fff','line-width':7,'line-opacity':.9}});
+    map.addLayer({id:'gpxview-track-base',type:'line',source:'gpxview-tracks',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#176bde','line-width':4}});
+    map.addSource('gpxview-track-colors',{type:'geojson',data:featureCollection([])});
+    map.addLayer({id:'gpxview-track',type:'line',source:'gpxview-track-colors',layout:{'line-cap':'square','line-join':'round'},paint:{'line-color':'#176bde','line-width':4.5}});
     map.addSource('gpxview-ends',{type:'geojson',data:featureCollection([])});
     map.addLayer({id:'gpxview-ends',type:'circle',source:'gpxview-ends',paint:{'circle-radius':6,'circle-color':['match',['get','kind'],'start','#18a558','#e34b4b'],'circle-stroke-color':'#fff','circle-stroke-width':2}});
     map.addSource('gpxview-hover',{type:'geojson',data:featureCollection([])});
     map.addLayer({id:'gpxview-hover',type:'circle',source:'gpxview-hover',paint:{'circle-radius':7,'circle-color':'#fff','circle-stroke-color':'#176bde','circle-stroke-width':3}});
+    map.addSource('gpxview-playback',{type:'geojson',data:featureCollection([])});
+    map.addLayer({id:'gpxview-playback-halo',type:'circle',source:'gpxview-playback',paint:{'circle-radius':12,'circle-color':'#ff3158','circle-opacity':.22}});
+    map.addLayer({id:'gpxview-playback',type:'circle',source:'gpxview-playback',paint:{'circle-radius':6,'circle-color':'#ff3158','circle-stroke-color':'#fff','circle-stroke-width':2.5}});
     styleReady=true;
     if(styleMode==='raster')setRasterVisibility(activeBaseMap);
     applyOverlayData();
+    applyTrackColorStyle();
+    applyMapAtmosphere();
+    if(terrainEnabled){const animate=terrainAnimateOnReady;terrainAnimateOnReady=false;void applyTerrain(generation,animate)}
   });
   function featureCollection(features){return{type:'FeatureCollection',features}}
+  function loadTerrainSourceConfig(){
+    if(terrainSourceConfigPromise)return terrainSourceConfigPromise;
+    terrainSourceConfigPromise=fetch(terrainTileJsonUrl,{cache:'force-cache'}).then(response=>{if(!response.ok)throw new Error(`DEM TileJSON ${response.status}`);return response.json()}).then(tileJson=>{
+      if(!Array.isArray(tileJson.tiles)||!tileJson.tiles.length)throw new Error('DEM TileJSON 中没有瓦片地址');
+      const config={type:'raster-dem',tiles:tileJson.tiles,encoding:tileJson.encoding||'terrarium',tileSize:tileJson.tileSize||512,maxzoom:Number.isInteger(tileJson.maxzoom)?tileJson.maxzoom:17};
+      if(tileJson.attribution)config.attribution=tileJson.attribution;if(Array.isArray(tileJson.bounds))config.bounds=tileJson.bounds;if(Number.isInteger(tileJson.minzoom))config.minzoom=tileJson.minzoom;
+      return config
+    }).catch(error=>{terrainSourceConfigPromise=null;throw error});
+    return terrainSourceConfigPromise
+  }
+  function removeTerrain(){
+    if(!styleReady)return;
+    if(map.getTerrain())map.setTerrain(null);
+    if(map.getLayer(terrainHillshadeId))map.removeLayer(terrainHillshadeId);
+    if(map.getLayer(terrainReliefId))map.removeLayer(terrainReliefId);
+    if(map.getSource(terrainSourceId))map.removeSource(terrainSourceId)
+  }
+  function terrainReliefColor(){return darkTheme?[
+    'interpolate',['linear'],['elevation'],-500,'#17252a',0,'#20382d',300,'#405c38',800,'#695a3d',1500,'#84695a',2500,'#a9adb2',4000,'#e9edf2',7000,'#ffffff'
+  ]:[
+    'interpolate',['linear'],['elevation'],-500,'#bcd7d9',0,'#cfe5b8',300,'#a9cf8c',800,'#d7cc91',1500,'#c7aa7f',2500,'#b99b8a',4000,'#d9dce0',7000,'#ffffff'
+  ]}
+  function applyTerrainAppearance(){
+    if(!styleReady)return;
+    if(map.getLayer(terrainReliefId)){
+      map.setPaintProperty(terrainReliefId,'color-relief-color',terrainReliefColor());
+      map.setPaintProperty(terrainReliefId,'color-relief-opacity',darkTheme ? .24 : .2)
+    }
+    if(map.getLayer(terrainHillshadeId)){
+      const highlights=darkTheme?'#67717c':'#ffffff';
+      const shadows=darkTheme?'#101820':'#665844';
+      map.setPaintProperty(terrainHillshadeId,'hillshade-highlight-color',highlights);map.setPaintProperty(terrainHillshadeId,'hillshade-shadow-color',shadows)
+    }
+  }
+  function applyMapAtmosphere(){
+    if(!styleReady)return;
+    if(!terrainEnabled){map.setSky(null);return}
+    map.setSky(darkTheme?{
+      'sky-color':'#050914','horizon-color':'#111827','fog-color':'#182231','fog-ground-blend':.72,'horizon-fog-blend':.88,'sky-horizon-blend':.72,'atmosphere-blend':.9
+    }:{
+      'sky-color':'#dcecff','horizon-color':'#ffffff','fog-color':'#ffffff','fog-ground-blend':.72,'horizon-fog-blend':.88,'sky-horizon-blend':.72,'atmosphere-blend':.9
+    })
+  }
+  async function applyTerrain(generation=styleGeneration,animate=false){
+    if(!terrainEnabled||!styleReady)return;
+    try{
+      const sourceConfig=await loadTerrainSourceConfig();
+      if(!terrainEnabled||!styleReady||generation!==styleGeneration)return;
+      if(!map.getSource(terrainSourceId))map.addSource(terrainSourceId,sourceConfig);
+      const beforeTrack=map.getLayer('gpxview-track-shadow')?'gpxview-track-shadow':undefined;
+      if(!map.getLayer(terrainReliefId))map.addLayer({id:terrainReliefId,type:'color-relief',source:terrainSourceId,paint:{'color-relief-color':terrainReliefColor(),'color-relief-opacity':darkTheme ? .24 : .2}},beforeTrack);
+      if(!map.getLayer(terrainHillshadeId))map.addLayer({id:terrainHillshadeId,type:'hillshade',source:terrainSourceId,paint:{'hillshade-method':'standard','hillshade-illumination-direction':135,'hillshade-illumination-altitude':25,'hillshade-illumination-anchor':'map','hillshade-highlight-color':'#ffffff','hillshade-shadow-color':'#514633','hillshade-accent-color':'rgba(45,38,28,.3)','hillshade-exaggeration':.45}},beforeTrack);
+      applyTerrainAppearance();
+      map.setTerrain({source:terrainSourceId,exaggeration:1});
+      if(animate)map.easeTo({pitch:defaultTerrainPitch,duration:650});
+      postHostMessage({type:'terrainState',enabled:true})
+    }catch{
+      if(generation!==styleGeneration)return;
+      terrainEnabled=false;removeTerrain();applyMapAtmosphere();map.easeTo({pitch:0,bearing:0,duration:450});
+      postHostMessage({type:'terrainState',enabled:false,error:'三维地形数据暂时无法加载，已切回二维地图'})
+    }
+  }
+  function setTerrainEnabled(enabled){
+    terrainEnabled=enabled;
+    if(!enabled){terrainAnimateOnReady=false;terrainReadout.hidden=true;removeTerrain();applyMapAtmosphere();map.easeTo({pitch:0,bearing:0,duration:450});postHostMessage({type:'terrainState',enabled:false});return}
+    if(!styleReady){terrainAnimateOnReady=true;return}
+    applyMapAtmosphere();
+    void applyTerrain(styleGeneration,true)
+  }
   function applyOverlayData(){
     if(!styleReady)return;
-    map.getSource('gpxview-tracks')?.setData(trackData);map.getSource('gpxview-ends')?.setData(endData);map.getSource('gpxview-hover')?.setData(hoverData);
-    if(!pendingFit)return;pendingFit=false;const bounds=new maplibregl.LngLatBounds();trackData.features.forEach(feature=>feature.geometry.coordinates.forEach(coordinate=>bounds.extend(coordinate)));if(!bounds.isEmpty())map.fitBounds(bounds,{padding:{top:55,right:55,bottom:trackHasChartData?198:55,left:230},maxZoom:16,duration:500})
+    map.getSource('gpxview-tracks')?.setData(trackData);map.getSource('gpxview-track-colors')?.setData(trackColorData);map.getSource('gpxview-ends')?.setData(endData);map.getSource('gpxview-hover')?.setData(hoverData);map.getSource('gpxview-playback')?.setData(playbackData);
+    if(!pendingFit)return;pendingFit=false;const bounds=new maplibregl.LngLatBounds();trackData.features.forEach(feature=>feature.geometry.coordinates.forEach(coordinate=>bounds.extend(coordinate)));if(!bounds.isEmpty())map.fitBounds(bounds,{padding:{top:55,right:55,bottom:chartPanel.hidden?55:chartPanel.offsetHeight+34,left:230},maxZoom:16,duration:500})
   }
   function setRasterVisibility(id){if(!styleReady||styleMode!=='raster')return;Object.entries(rasterMaps).forEach(([key,config])=>config.layerIds.forEach(layerId=>{if(map.getLayer(layerId))map.setLayoutProperty(layerId,'visibility',key===id?'visible':'none')}))}
   function setBaseMap(id){
@@ -163,7 +342,7 @@
     if(desiredMode!==styleMode){styleMode=desiredMode;styleReady=false;map.setStyle(desiredMode==='vector'?openFreeMapStyle:createRasterStyle(id),{diff:false});return}
     if(desiredMode==='raster')setRasterVisibility(id)
   }
-  function setTheme(theme){darkTheme=theme==='dark';document.documentElement.dataset.theme=darkTheme?'dark':'light';renderChart()}
+  function setTheme(theme){darkTheme=theme==='dark';document.documentElement.dataset.theme=darkTheme?'dark':'light';applyMapAtmosphere();applyTerrainAppearance();renderChart(playback.currentIndex)}
   function setDetailsVisible(visible){document.body.classList.toggle('details-hidden',!visible);detailsToggle.setAttribute('aria-expanded',String(visible));const label=visible?'隐藏详细信息':'显示详细信息';detailsToggle.title=label;detailsToggle.setAttribute('aria-label',label)}
   function setMetric(rowId,valueId,value){const row=document.getElementById(rowId);row.hidden=!value;if(value)document.getElementById(valueId).textContent=value}
   function updateSummary(summary){if(!summary)return;document.getElementById('summaryFormat').textContent=summary.formatLine;document.getElementById('summaryDistance').textContent=summary.distance;summaryMetrics.hidden=false;setMetric('durationMetric','summaryDuration',summary.duration);setMetric('elevationMetric','summaryElevation',summary.elevation);setMetric('speedMetric','summarySpeed',summary.speed);setMetric('heartRateMetric','summaryHeartRate',summary.heartRate);setMetric('cadencePowerMetric','summaryCadencePower',summary.cadencePower)}
@@ -200,6 +379,54 @@
       item.append(trackFrame,info,elevationWrap);recentList.append(item)
     })
   }
+  function lowerBoundProfile(start,end,target){let low=start,high=end+1;while(low<high){const middle=(low+high)>>1;if(profile[middle].distanceKm<target)low=middle+1;else high=middle}return low}
+  function computeProfileSlopes(){
+    profile.forEach(point=>delete point.slopePercent);
+    let start=0;
+    while(start<profile.length){
+      let end=start;while(end+1<profile.length&&profile[end+1].segmentIndex===profile[start].segmentIndex)end++;
+      for(let index=start;index<=end;index++){
+        const point=profile[index],left=Math.max(start,lowerBoundProfile(start,end,point.distanceKm-.015)-1),right=Math.min(end,lowerBoundProfile(start,end,point.distanceKm+.015));
+        const distance=(profile[right].distanceKm-profile[left].distanceKm)*1000,firstElevation=profile[left].elevationMeters,lastElevation=profile[right].elevationMeters;
+        if(distance>=5&&Number.isFinite(firstElevation)&&Number.isFinite(lastElevation))point.slopePercent=Math.max(-50,Math.min(50,(lastElevation-firstElevation)/distance*100))
+      }
+      start=end+1
+    }
+  }
+  function averageFinite(first,second){const values=[first,second].filter(Number.isFinite);return values.length?values.reduce((sum,value)=>sum+value,0)/values.length:null}
+  function buildTrackColorData(){
+    const features=[];
+    for(let index=1;index<profile.length;index++){
+      const first=profile[index-1],second=profile[index];if(first.segmentIndex!==second.segmentIndex)continue;
+      const properties={};Object.values(trackColorDefinitions).forEach(definition=>{const value=averageFinite(first[definition.field],second[definition.field]);if(Number.isFinite(value))properties[definition.field]=value});
+      features.push({type:'Feature',properties,geometry:{type:'LineString',coordinates:[[first.longitude,first.latitude],[second.longitude,second.latitude]]}})
+    }
+    return featureCollection(features)
+  }
+  function percentile(values,ratio){if(!values.length)return 0;const position=(values.length-1)*ratio,lower=Math.floor(position),fraction=position-lower;return values[lower]+((values[lower+1]??values[lower])-values[lower])*fraction}
+  function trackColorStops(mode){
+    const definition=trackColorDefinitions[mode];if(!definition)return null;
+    if(definition.fixedStops)return definition.fixedStops;
+    const values=profile.map(point=>point[definition.field]).filter(Number.isFinite).sort((a,b)=>a-b);if(!values.length)return null;
+    let stops=[.05,.275,.5,.725,.95].map(ratio=>percentile(values,ratio));
+    if(stops.at(-1)-stops[0]<1e-6){const center=stops[0],delta=Math.max(1,Math.abs(center)*.05);stops=[center-delta,center-delta/2,center,center+delta/2,center+delta]}
+    for(let index=1;index<stops.length;index++)if(stops[index]<=stops[index-1])stops[index]=stops[index-1]+Math.max(.01,Math.abs(stops[index-1])*.0001);
+    return stops
+  }
+  function applyTrackColorStyle(){
+    if(!styleReady||!map.getLayer('gpxview-track'))return;
+    if(trackColorMode==='uniform'){
+      map.setPaintProperty('gpxview-track','line-color','#176bde');trackColorLegend.hidden=true;return
+    }
+    const definition=trackColorDefinitions[trackColorMode],stops=trackColorStops(trackColorMode);if(!definition||!stops){trackColorMode='uniform';trackColorSelect.value='uniform';applyTrackColorStyle();return}
+    const interpolation=['interpolate',['linear'],['get',definition.field]];stops.forEach((stop,index)=>interpolation.push(stop,definition.colors[index]));
+    map.setPaintProperty('gpxview-track','line-color',['case',['has',definition.field],interpolation,'rgba(23,107,222,.45)']);
+    const decimals=definition.unit==='%'||definition.unit==='km/h'?1:0;trackColorLegend.hidden=false;trackColorLegend.style.background=`linear-gradient(90deg,${definition.colors.join(',')})`;trackColorLegend.title=`${definition.label}：${stops[0].toFixed(decimals)}–${stops.at(-1).toFixed(decimals)} ${definition.unit}`
+  }
+  function refreshTrackColorControls(){
+    Object.entries(trackColorDefinitions).forEach(([key,definition])=>{availableTrackColors[key]=profile.some(point=>Number.isFinite(point[definition.field]));const option=trackColorSelect.querySelector(`option[value="${key}"]`);if(option)option.disabled=!availableTrackColors[key]});
+    if(trackColorMode!=='uniform'&&!availableTrackColors[trackColorMode])trackColorMode='uniform';trackColorSelect.value=trackColorMode;applyTrackColorStyle()
+  }
   function refreshSeriesControls(){
     Object.entries(seriesDefinitions).forEach(([key,definition])=>availableSeries[key]=profile.some(point=>Number.isFinite(point[definition.field])));
     [...selectedOverlays].forEach(key=>{if(!availableSeries[key])selectedOverlays.delete(key)});
@@ -212,11 +439,57 @@
   }
   function activeSeries(){const keys=[];if(availableSeries.elevation)keys.push('elevation');['heartRate','speed','power'].forEach(key=>{if(availableSeries[key]&&selectedOverlays.has(key))keys.push(key)});return keys}
   function formatSeriesValue(key,value){const definition=seriesDefinitions[key];return `${definition.label} ${value.toFixed(definition.decimals)} ${definition.unit}`}
+  function formatPlaybackDuration(seconds){seconds=Math.max(0,Math.round(seconds));const hours=Math.floor(seconds/3600),minutes=Math.floor(seconds%3600/60),remaining=seconds%60;return hours?`${hours}:${String(minutes).padStart(2,'0')}:${String(remaining).padStart(2,'0')}`:`${String(minutes).padStart(2,'0')}:${String(remaining).padStart(2,'0')}`}
+  function pausePlayback(){
+    playback.playing=false;if(playback.frameId)cancelAnimationFrame(playback.frameId);playback.frameId=0;playbackToggle.textContent='▶';playbackToggle.title='播放轨迹';playbackToggle.setAttribute('aria-label','播放轨迹')
+  }
+  function preparePlayback(){
+    pausePlayback();playback.axis=[];playback.position=0;playback.currentIndex=-1;playbackData=featureCollection([]);playbackRange.value='0';
+    const available=profile.length>1;playbackBar.hidden=!available;playbackToggle.disabled=!available;if(!available){playbackPosition.textContent='00:00 / 00:00';return}
+    const timed=profile.map((point,index)=>({index,value:point.elapsedSeconds})).filter(item=>Number.isFinite(item.value));
+    playback.usesTime=timed.length>=2&&timed.at(-1).value>timed[0].value;
+    if(playback.usesTime){
+      const start=timed[0].value,duration=timed.at(-1).value-start,firstDistance=profile[0].distanceKm,totalDistance=Math.max(0,profile.at(-1).distanceKm-firstDistance);
+      playback.axis=profile.map((point,index)=>Number.isFinite(point.elapsedSeconds)?Math.max(0,point.elapsedSeconds-start):(totalDistance>0?(point.distanceKm-firstDistance)/totalDistance:index/(profile.length-1))*duration)
+    }else{
+      const firstDistance=profile[0].distanceKm,totalDistance=(profile.at(-1).distanceKm-firstDistance)*1000;playback.axis=profile.map((point,index)=>totalDistance>0?(point.distanceKm-firstDistance)*1000:index)
+    }
+    for(let index=1;index<playback.axis.length;index++)playback.axis[index]=Math.max(playback.axis[index-1],playback.axis[index]);
+    playback.total=playback.axis.at(-1)||0;playbackToggle.disabled=playback.total<=0;setPlaybackPosition(0,false)
+  }
+  function playbackPointAt(position){
+    let low=0,high=playback.axis.length-1;while(low<high){const middle=(low+high)>>1;if(playback.axis[middle]<position)low=middle+1;else high=middle}
+    const upper=low,lower=Math.max(0,upper-1),span=playback.axis[upper]-playback.axis[lower];let ratio=span>0?(position-playback.axis[lower])/span:1;
+    const first=profile[lower],second=profile[upper];if(first.segmentIndex!==second.segmentIndex)ratio=1;
+    return{index:ratio<.5?lower:upper,coordinate:[first.longitude+(second.longitude-first.longitude)*ratio,first.latitude+(second.latitude-first.latitude)*ratio]}
+  }
+  function updatePlaybackReadout(index){
+    const point=profile[index];if(!point)return;
+    const values=[];if(Number.isFinite(point.elevationMeters))values.push(`海拔 ${point.elevationMeters.toFixed(0)} m`);if(Number.isFinite(point.slopePercent))values.push(`坡度 ${point.slopePercent.toFixed(1)}%`);if(Number.isFinite(point.speedKmh))values.push(`速度 ${point.speedKmh.toFixed(1)} km/h`);if(Number.isFinite(point.heartRateBpm))values.push(`心率 ${point.heartRateBpm.toFixed(0)} bpm`);if(Number.isFinite(point.powerWatts))values.push(`功率 ${point.powerWatts.toFixed(0)} W`);
+    meta.textContent=`${point.distanceKm.toFixed(2)} km${values.length?' · '+values.join(' · '):''}`
+  }
+  function setPlaybackPosition(position,follow){
+    if(!profile.length||!playback.axis.length)return;playback.position=Math.max(0,Math.min(playback.total,position));const current=playbackPointAt(playback.position);playback.currentIndex=current.index;
+    playbackRange.value=playback.total>0?String(Math.round(playback.position/playback.total*1000)):'0';playbackPosition.textContent=playback.usesTime?`${formatPlaybackDuration(playback.position)} / ${formatPlaybackDuration(playback.total)}`:`${(profile[current.index].distanceKm-profile[0].distanceKm).toFixed(2)} / ${(profile.at(-1).distanceKm-profile[0].distanceKm).toFixed(2)} km`;
+    playbackData=featureCollection([{type:'Feature',properties:{},geometry:{type:'Point',coordinates:current.coordinate}}]);if(styleReady)map.getSource('gpxview-playback')?.setData(playbackData);if(trackHasChartData)renderChart(current.index);updatePlaybackReadout(current.index);
+    if(follow&&playback.follow){const now=performance.now();if(now-playback.lastFollowTimestamp>260){playback.lastFollowTimestamp=now;map.easeTo({center:current.coordinate,duration:300})}}
+  }
+  function playbackRateFor(total,usesTime,maximumDuration){
+    if(!(total>0))return 0;const fittedRate=total/Math.max(1,maximumDuration);return usesTime?Math.max(1,fittedRate):fittedRate
+  }
+  function playbackTick(timestamp){
+    if(!playback.playing)return;const elapsed=(timestamp-playback.startTimestamp)/1000,rate=playbackRateFor(playback.total,playback.usesTime,playback.maximumDuration),next=playback.startPosition+elapsed*rate;
+    if(next>=playback.total){setPlaybackPosition(playback.total,true);pausePlayback();return}setPlaybackPosition(next,true);playback.frameId=requestAnimationFrame(playbackTick)
+  }
+  function startPlayback(){
+    if(playback.total<=0)return;if(playback.position>=playback.total)setPlaybackPosition(0,false);playback.playing=true;playback.startPosition=playback.position;playback.startTimestamp=performance.now();playbackToggle.textContent='Ⅱ';playbackToggle.title='暂停轨迹回放';playbackToggle.setAttribute('aria-label','暂停轨迹回放');playback.frameId=requestAnimationFrame(playbackTick)
+  }
   function loadTrack(data){
-    profile=data.profile||[];updateSummary(data.summary);summaryPanel.hidden=false;detailsToggle.hidden=false;setRecentPanelVisible(false);trackHasChartData=refreshSeriesControls();chartPanel.hidden=!trackHasChartData;
+    pausePlayback();profile=data.profile||[];computeProfileSlopes();trackColorData=buildTrackColorData();updateSummary(data.summary);summaryPanel.hidden=false;detailsToggle.hidden=false;setRecentPanelVisible(false);trackHasChartData=refreshSeriesControls();refreshTrackColorControls();
+    const hasPlayback=profile.length>1,playbackOnly=!trackHasChartData&&hasPlayback;chartPanel.hidden=!trackHasChartData&&!hasPlayback;chartPanel.classList.toggle('playback-only',playbackOnly);document.body.classList.toggle('chart-visible',!chartPanel.hidden);document.body.classList.toggle('compact-chart',playbackOnly);
     const features=(data.segments||[]).filter(segment=>segment.coordinates.length>0).map(segment=>({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:segment.coordinates}}));
     const endpoints=[];features.forEach(feature=>{const coordinates=feature.geometry.coordinates;if(coordinates.length){endpoints.push({type:'Feature',properties:{kind:'start'},geometry:{type:'Point',coordinates:coordinates[0]}});if(coordinates.length>1)endpoints.push({type:'Feature',properties:{kind:'end'},geometry:{type:'Point',coordinates:coordinates.at(-1)}})}});
-    trackData=featureCollection(features);endData=featureCollection(endpoints);hoverData=featureCollection([]);pendingFit=true;applyOverlayData();renderChart();
+    trackData=featureCollection(features);endData=featureCollection(endpoints);hoverData=featureCollection([]);preparePlayback();pendingFit=true;applyOverlayData();renderChart(playback.currentIndex);
   }
   function resizeCanvas(){const r=canvas.getBoundingClientRect(),d=devicePixelRatio||1;canvas.width=Math.max(1,Math.round(r.width*d));canvas.height=Math.max(1,Math.round(r.height*d));return{ctx:canvas.getContext('2d'),w:r.width,h:r.height,d}}
   function rangeFor(key){const definition=seriesDefinitions[key],values=profile.map(point=>point[definition.field]).filter(Number.isFinite);let min=Math.min(...values),max=Math.max(...values);if(key==='elevation'){min=Math.floor(min/10)*10;max=Math.ceil(max/10)*10}if(min===max){const delta=Math.max(1,Math.abs(min)*.05);min-=delta;max+=delta}else{const padding=(max-min)*.06;min-=padding;max+=padding}return{min,max}}
@@ -230,14 +503,15 @@
     const total=profile.at(-1)?.distanceKm||0,plotWidth=w-pad.l-pad.r,intervals=Math.max(2,Math.min(6,Math.floor(plotWidth/140)));ctx.font='10px Segoe UI';for(let i=0;i<=intervals;i++){const ratio=i/intervals,xx=pad.l+ratio*plotWidth,value=total*ratio;ctx.strokeStyle=darkTheme?'#666':'#aeb4ba';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xx,h-pad.b);ctx.lineTo(xx,h-pad.b+4);ctx.stroke();ctx.fillStyle=darkTheme?'#aaa':'#6f7479';ctx.textAlign=i===0?'left':i===intervals?'right':'center';ctx.fillText(value.toFixed(total<10?1:0)+' km',xx,h-5)}ctx.textAlign='left';
     if(active>=0){const point=profile[active],xx=x(active);ctx.strokeStyle=darkTheme?'#d7dadd':'#555b61';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xx,pad.t);ctx.lineTo(xx,h-pad.b);ctx.stroke();keys.forEach(key=>{const definition=seriesDefinitions[key],value=point[definition.field];if(!Number.isFinite(value))return;ctx.fillStyle=definition.color;ctx.beginPath();ctx.arc(xx,y(key,value),3.5,0,Math.PI*2);ctx.fill();ctx.strokeStyle=darkTheme?'#222':'#fff';ctx.lineWidth=1.5;ctx.stroke()})}
   }
-  canvas.addEventListener('pointermove',event=>{if(!profile.length)return;const rect=canvas.getBoundingClientRect(),left=48,right=16,ratio=Math.max(0,Math.min(1,(event.clientX-rect.left-left)/(rect.width-left-right))),index=Math.round(ratio*(profile.length-1)),point=profile[index];renderChart(index);const values=activeSeries().filter(key=>Number.isFinite(point[seriesDefinitions[key].field])).map(key=>formatSeriesValue(key,point[seriesDefinitions[key].field]));meta.textContent=`${point.distanceKm.toFixed(2)} km${values.length?' · '+values.join(' · '):''}`;hoverData=featureCollection([{type:'Feature',properties:{},geometry:{type:'Point',coordinates:[point.longitude,point.latitude]}}]);if(styleReady)map.getSource('gpxview-hover')?.setData(hoverData)});
-  canvas.addEventListener('pointerleave',()=>{renderChart();meta.textContent=profile.length?`${(profile.at(-1)?.distanceKm||0).toFixed(2)} km`:'暂无数据';hoverData=featureCollection([]);if(styleReady)map.getSource('gpxview-hover')?.setData(hoverData)});
+  canvas.addEventListener('pointermove',event=>{if(!profile.length)return;if(playback.playing)pausePlayback();const rect=canvas.getBoundingClientRect(),left=48,right=16,ratio=Math.max(0,Math.min(1,(event.clientX-rect.left-left)/(rect.width-left-right))),index=Math.round(ratio*(profile.length-1)),point=profile[index];renderChart(index);const values=activeSeries().filter(key=>Number.isFinite(point[seriesDefinitions[key].field])).map(key=>formatSeriesValue(key,point[seriesDefinitions[key].field]));meta.textContent=`${point.distanceKm.toFixed(2)} km${values.length?' · '+values.join(' · '):''}`;hoverData=featureCollection([{type:'Feature',properties:{},geometry:{type:'Point',coordinates:[point.longitude,point.latitude]}}]);if(styleReady)map.getSource('gpxview-hover')?.setData(hoverData)});
+  canvas.addEventListener('pointerleave',()=>{renderChart(playback.currentIndex);if(playback.currentIndex>=0)updatePlaybackReadout(playback.currentIndex);else meta.textContent=profile.length?`${(profile.at(-1)?.distanceKm||0).toFixed(2)} km`:'暂无数据';hoverData=featureCollection([]);if(styleReady)map.getSource('gpxview-hover')?.setData(hoverData)});
   addEventListener('resize',()=>renderChart());
   if(window.chrome?.webview){chrome.webview.addEventListener('message',event=>{
     const data=event.data;
     if(data?.type==='loadTrack')loadTrack(data);
     else if(data?.type==='setMapStyle')setBaseMap(data.mapStyle);
     else if(data?.type==='setTheme')setTheme(data.theme);
+    else if(data?.type==='setTerrainEnabled')setTerrainEnabled(Boolean(data.enabled));
     else if(data?.type==='setRecentTracks')renderRecentTracks(data.entries);
     else if(data?.type==='setRecentPanelVisible')setRecentPanelVisible(Boolean(data.visible));
     else if(data?.type==='setPlaceName')setPlaceName(data.placeName);

@@ -18,6 +18,7 @@ public partial class MainWindow
         webReady = true;
         SendTheme();
         SendMapStyle();
+        SendTerrainMode();
         if (currentDocument is not null)
         {
             SendToMap(currentDocument, currentStatistics ?? TrackStatisticsCalculator.Calculate(currentDocument));
@@ -42,6 +43,14 @@ public partial class MainWindow
                 break;
             case "openFile":
                 OnOpenFile(this, new RoutedEventArgs());
+                break;
+            case "terrainState" when message.TryGetProperty("enabled", out var enabledElement)
+                                     && enabledElement.ValueKind is JsonValueKind.True or JsonValueKind.False:
+                var error = message.TryGetProperty("error", out var errorElement)
+                            && errorElement.ValueKind == JsonValueKind.String
+                    ? errorElement.GetString()
+                    : null;
+                SetTerrainState(enabledElement.GetBoolean(), error);
                 break;
         }
     }

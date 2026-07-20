@@ -6,26 +6,30 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 
 - 打开、拖放或从 Windows 文件资源管理器启动 `.gpx`、`.kml`、`.kmz`、`.fit`
 - 默认使用 OpenFreeMap 现代矢量地图，并可切换 OSM 经典、天地图街道/影像/地形、Esri 卫星、OpenTopoMap、OSM 人道主义
+- 可一键切换 2D/3D，使用在线 DEM 将底图和轨迹贴合到真实地形，并叠加海拔分层设色、山体阴影与随主题变化的地平线雾化
 - 地图铺满内容区，摘要和图表以半透明背景模糊层覆盖在地图上，可一键收起
 - 状态栏持续显示文件格式、距离、累计爬升、总用时和轨迹点数
 - 城市级轨迹地名识别，并在当前摘要和最近轨迹中显示
 - 最近轨迹面板缓存文件名、统计、地名、轨迹缩略图和海拔缩略图，启动时无需重新解析原文件
 - 单图标切换跟随系统、浅色和深色主题，WPF、地图覆盖层与图表同步
+- 轨迹可按统一颜色、海拔、坡度、速度、心率或功率动态着色
+- 可按原始时间戳或距离回放轨迹，支持变速、暂停、拖动定位、地图跟随和海拔图同步
 - 海拔作为基础曲线，可按数据存在情况叠加心率、速度和功率；悬停数值与地图位置联动
+- 地图提供米制比例尺；3D 开启时可在鼠标位置读取 DEM 地面海拔
 - 距离、时长、移动时间、爬升、速度、心率、踏频、功率统计
 - Garmin FIT GPS 与常用运动记录字段
 - WGS84 默认显示，可手动纠正实际保存为 GCJ-02 或 BD-09 的非标准源文件
 - 大轨迹在发送到地图和图表前自动抽样
 - 多尺寸 Windows 应用图标、开始菜单入口、卸载支持和四类文件关联
 
-键盘操作：`Ctrl+O` 打开文件；`F11` 进入或退出全屏；全屏时也可按 `Esc` 返回。
+键盘与鼠标操作：`Ctrl+O` 打开文件；`F11` 进入或退出全屏；全屏时也可按 `Esc` 返回；在地图上按住 `Shift` 并用鼠标左键拖动，可水平旋转地图，3D 状态下还可垂直调整倾斜角度；点击地图右上角的指南针可回到正北方向。
 
 ## 安装
 
 构建出的 64 位 MSI 位于：
 
 ```text
-artifacts\installer\GpxView-0.1.1-win-x64.msi
+artifacts\installer\GpxView-0.1.3-win-x64.msi
 ```
 
 安装器将 GpxView 安装到 Program Files，创建开始菜单入口，并向 Windows 注册 GPX、KML、KMZ、FIT 的打开方式和“默认应用”能力；不创建桌面快捷方式。安装包包含 .NET 10 桌面运行时，终端用户无需另行安装 .NET。现代 Windows 通常已包含 Microsoft Edge WebView2 Runtime；若该组件缺失，应用会显示修复提示。
@@ -35,7 +39,7 @@ artifacts\installer\GpxView-0.1.1-win-x64.msi
 - .NET 10 LTS / C# / WPF Fluent theme
 - Microsoft WebView2
 - 随应用本地分发的 MapLibre GL JS 5.6.2
-- OpenFreeMap/OpenMapTiles 矢量地图，以及 OSM 系、天地图与 Esri 栅格地图服务
+- OpenFreeMap/OpenMapTiles 矢量地图，Mapterhorn DEM，以及 OSM 系、天地图与 Esri 栅格地图服务
 - Garmin.FIT.Sdk 21.205.0
 - WiX Toolset SDK 5.0.2
 - xUnit
@@ -99,7 +103,7 @@ dotnet build installer\GpxView.Installer.wixproj -c Release
 
 ```text
 artifacts\publish\win-x64\
-artifacts\installer\GpxView-0.1.1-win-x64.msi
+artifacts\installer\GpxView-0.1.3-win-x64.msi
 ```
 
 应用图标如需从可编辑源重新生成：
@@ -122,5 +126,6 @@ GPX、KML 和 FIT 按规范默认视为 WGS84，直接显示在 OpenFreeMap、OS
 - Esri 卫星：Esri World Imagery。
 - OpenTopoMap：OSM 数据与 SRTM 地形风格。
 - OSM 人道主义：OSM France 托管的 HOT 风格瓦片。
+- 三维地形：Mapterhorn Terrarium DEM；仅在开启 3D 时请求，切换底图后会自动恢复三维状态。
 
-应用会在地图上显示各服务要求的署名。OpenFreeMap 公共实例无需 Key、允许商业使用且当前不限制地图浏览或请求数，但按原样提供、没有 SLA，并可能停止或变更服务；需要稳定保障时应考虑自托管。天地图服务需要有效 Key，并受其服务条款和调用额度约束；Esri 影像受 Esri 及其数据提供方条款约束；OSMF、OpenTopoMap 和 OSM France 的公共瓦片也不是无限制 CDN。不得批量下载或离线预取，公开大规模分发前应分别核对服务方的最新政策并选择有明确授权和容量保障的服务。
+应用会在地图上显示各服务要求的署名。OpenFreeMap 和 Mapterhorn 公共实例无需 Key，但均按原样提供、没有 SLA，并可能停止或变更服务；需要稳定保障时应考虑自托管。天地图服务需要有效 Key，并受其服务条款和调用额度约束；Esri 影像受 Esri 及其数据提供方条款约束；OSMF、OpenTopoMap 和 OSM France 的公共瓦片也不是无限制 CDN。不得批量下载或离线预取，公开大规模分发前应分别核对服务方的最新政策并选择有明确授权和容量保障的服务。

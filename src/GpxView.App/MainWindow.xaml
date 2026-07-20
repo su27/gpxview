@@ -55,6 +55,8 @@
                             <ComboBoxItem Content="BD-09" />
                         </ComboBox>
                     </StackPanel>
+                    <Button x:Name="TerrainButton" Width="38" Height="30" Padding="0" Margin="0,0,8,0"
+                            Content="3D" FontSize="12" FontWeight="SemiBold" ToolTip="切换到三维地形" Click="OnTerrainToggle" />
                     <Button x:Name="ThemeButton" Width="30" Height="30" Padding="0"
                             Content="◐" FontSize="15" ToolTip="主题：跟随系统（点击切换）" Click="OnThemeToggle" />
                 </StackPanel>
