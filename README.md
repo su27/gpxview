@@ -10,7 +10,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 ## 功能
 
 - 打开、拖放或从 Windows 文件资源管理器启动 `.gpx`、`.kml`、`.kmz`、`.fit`
-- 默认使用 OpenFreeMap 现代矢量地图，并可切换 OSM 经典、天地图街道/影像/地形、Esri 卫星、OpenTopoMap、OSM 人道主义
+- 默认使用 OpenFreeMap 现代矢量地图，并可切换免 Key 户外矢量地图、OSM 经典、天地图街道/影像/地形、Esri 卫星、OpenTopoMap、OSM 人道主义
 - 可一键切换 2D/3D，使用在线 DEM 将底图和轨迹贴合到真实地形，并叠加海拔分层设色、山体阴影与随主题变化的地平线雾化
 - 地图铺满内容区，摘要和图表以半透明背景模糊层覆盖在地图上，可一键收起
 - 状态栏持续显示文件格式、距离、累计爬升、总用时和轨迹点数
@@ -34,7 +34,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 构建出的 64 位 MSI 位于：
 
 ```text
-artifacts\installer\GpxView-0.1.3-win-x64.msi
+artifacts\installer\GpxView-0.1.4-win-x64.msi
 ```
 
 安装器将 GpxView 安装到 Program Files，创建开始菜单入口，并向 Windows 注册 GPX、KML、KMZ、FIT 的打开方式和“默认应用”能力；不创建桌面快捷方式。安装包包含 .NET 10 桌面运行时，终端用户无需另行安装 .NET。现代 Windows 通常已包含 Microsoft Edge WebView2 Runtime；若该组件缺失，应用会显示修复提示。
@@ -44,6 +44,7 @@ artifacts\installer\GpxView-0.1.3-win-x64.msi
 - .NET 10 LTS / C# / WPF Fluent theme
 - Microsoft WebView2
 - 随应用本地分发的 MapLibre GL JS 5.6.2
+- 随应用本地分发的 maplibre-contour 0.1.0，在 Web Worker 中从 DEM 生成矢量等高线
 - OpenFreeMap/OpenMapTiles 矢量地图，Mapterhorn DEM，以及 OSM 系、天地图与 Esri 栅格地图服务
 - Garmin.FIT.Sdk 21.205.0
 - WiX Toolset SDK 5.0.2
@@ -58,7 +59,7 @@ dotnet test GpxView.sln
 dotnet run --project src\GpxView.App\GpxView.App.csproj
 ```
 
-仓库通过 `global.json` 固定使用 .NET SDK 10.0.302。MapLibre 的 JS、CSS 和许可证固定保存在 `src\GpxView.App\Web\vendor\maplibre-gl\5.6.2`，应用运行时不依赖 unpkg 等前端 CDN。
+仓库通过 `global.json` 固定使用 .NET SDK 10.0.302。MapLibre 与 maplibre-contour 的 JS、CSS 和许可证固定保存在 `src\GpxView.App\Web\vendor` 对应版本目录，应用运行时不依赖 unpkg 等前端 CDN。maplibre-contour 使用 BSD 3-Clause 许可证。
 
 ## 地图服务配置
 
@@ -87,6 +88,14 @@ Copy-Item src\GpxView.App\MapServices.example.json src\GpxView.App\MapServices.l
 
 天地图官方建议安全密钥仅由自有代理服务器追加。当前桌面版本没有代理，在开启安全密钥后必须把 `tk` 与 `sk` 一起发送给 WMTS，因此该配置虽然不会进入 Git，仍会包含在发布目录和 MSI 中，也能被终端用户提取。当前方式只适合自用和小范围测试；公开分发前应改为用户自行配置或由受控代理转发。
 
+## 户外矢量地图
+
+“户外”底图不需要 API Key。它以 OpenFreeMap Bright 矢量数据为基础，使用自然地貌色系，强化森林、水系、步道与山峰，并淡化面向机动车导航的道路层级。
+
+地形数据来自 Mapterhorn Terrarium DEM。应用通过随包分发的 maplibre-contour 在 Web Worker 中生成米制矢量等高线：低缩放级别使用较疏的等高距，进入山地细节后逐步细化到 20 米普通等高线与 100 米主等高线。2D 户外底图会显示海拔分层设色、单方向山体阴影、等高线和高度标注；切换 3D 后复用同一份 DEM 与缓存，不重复下载地形瓦片。
+
+Mapterhorn 当前提供到 12 级的原生 DEM，应用在更高层级使用过缩放，并从 8 级开始请求等高线，以减少无效请求和不必要的计算。等高线加载失败时仍保留 OpenFreeMap 户外矢量底图，并在状态栏显示降级提示。
+
 ## 最近轨迹与地名
 
 应用最多保存 20 条最近轨迹到 `%LOCALAPPDATA%\GpxView\recent-tracks.json`。缓存包含原文件路径、格式、距离、爬升、地名及经过归一化抽样的轨迹和海拔缩略数据；打开最近面板不会重新读取轨迹文件。点击记录时才检查原文件，文件不存在会提示并从历史中删除。
@@ -108,7 +117,7 @@ dotnet build installer\GpxView.Installer.wixproj -c Release
 
 ```text
 artifacts\publish\win-x64\
-artifacts\installer\GpxView-0.1.3-win-x64.msi
+artifacts\installer\GpxView-0.1.4-win-x64.msi
 ```
 
 应用图标如需从可编辑源重新生成：
@@ -124,6 +133,7 @@ GPX、KML 和 FIT 按规范默认视为 WGS84，直接显示在 OpenFreeMap、OS
 ## 地图服务
 
 - OpenFreeMap 现代：默认使用 Liberty 矢量样式，基于 OpenMapTiles 与 OpenStreetMap 数据，无需 API Key。
+- OpenFreeMap 户外：以 Bright 矢量样式为基础，叠加 Mapterhorn 地形和本地动态等高线；详见“户外矢量地图”。
 - OSM 经典：OpenStreetMap Foundation 公共栅格瓦片服务。
 - 天地图街道：`vec_w` 底图叠加 `cva_w` 中文注记。
 - 天地图影像：`img_w` 影像叠加 `cia_w` 中文注记。
@@ -131,6 +141,6 @@ GPX、KML 和 FIT 按规范默认视为 WGS84，直接显示在 OpenFreeMap、OS
 - Esri 卫星：Esri World Imagery。
 - OpenTopoMap：OSM 数据与 SRTM 地形风格。
 - OSM 人道主义：OSM France 托管的 HOT 风格瓦片。
-- 三维地形：Mapterhorn Terrarium DEM；仅在开启 3D 时请求，切换底图后会自动恢复三维状态。
+- 地形与等高线：Mapterhorn Terrarium DEM；开启 3D 或选择户外底图时按视野请求，二者共享 DEM 缓存，切换底图后会自动恢复三维状态。
 
 应用会在地图上显示各服务要求的署名。OpenFreeMap 和 Mapterhorn 公共实例无需 Key，但均按原样提供、没有 SLA，并可能停止或变更服务；需要稳定保障时应考虑自托管。天地图服务需要有效 Key，并受其服务条款和调用额度约束；Esri 影像受 Esri 及其数据提供方条款约束；OSMF、OpenTopoMap 和 OSM France 的公共瓦片也不是无限制 CDN。不得批量下载或离线预取，公开大规模分发前应分别核对服务方的最新政策并选择有明确授权和容量保障的服务。

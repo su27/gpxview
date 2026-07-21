@@ -52,6 +52,10 @@ public partial class MainWindow
                     : null;
                 SetTerrainState(enabledElement.GetBoolean(), error);
                 break;
+            case "mapError" when message.TryGetProperty("error", out var mapErrorElement)
+                                 && mapErrorElement.ValueKind == JsonValueKind.String:
+                StatusText.Text = mapErrorElement.GetString() ?? "地图图层暂时无法加载";
+                break;
         }
     }
 
