@@ -2,6 +2,11 @@
 
 Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 
+<img width="2220" height="1424" alt="ScreenShot_2026-07-21_103517_252" src="https://github.com/user-attachments/assets/ee821011-81ec-45df-9498-87b77c8f59ad" />
+<img width="2220" height="1424" alt="ScreenShot_2026-07-21_103936_272" src="https://github.com/user-attachments/assets/9d2423e1-d9c0-467c-8797-d17ad93555eb" />
+<img width="2220" height="1424" alt="ScreenShot_2026-07-21_103759_739" src="https://github.com/user-attachments/assets/6c6bfee9-7275-4c9e-9fed-3c62a6ffbcf1" />
+
+
 ## 功能
 
 - 打开、拖放或从 Windows 文件资源管理器启动 `.gpx`、`.kml`、`.kmz`、`.fit`
