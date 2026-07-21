@@ -4,13 +4,10 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 
 ## 界面预览
 
-<p align="center">
-  <img width="49%" alt="GpxView 地图与轨迹界面" src="https://github.com/user-attachments/assets/ee821011-81ec-45df-9498-87b77c8f59ad" />
-  <img width="49%" alt="GpxView 三维地形界面" src="https://github.com/user-attachments/assets/9d2423e1-d9c0-467c-8797-d17ad93555eb" />
-</p>
-<p align="center">
-  <img width="98%" alt="GpxView 轨迹分析界面" src="https://github.com/user-attachments/assets/6c6bfee9-7275-4c9e-9fed-3c62a6ffbcf1" />
-</p>
+<img width="2477" height="1425" alt="ScreenShot_2026-07-21_153337_294" src="https://github.com/user-attachments/assets/946e107d-44a2-4021-a4ae-a349aac71a0e" />
+<img width="2477" height="1425" alt="ScreenShot_2026-07-21_153504_396" src="https://github.com/user-attachments/assets/57f66c59-8a37-4018-b772-61eb75af2398" />
+<img width="2477" height="1425" alt="ScreenShot_2026-07-21_153642_400" src="https://github.com/user-attachments/assets/639993b1-672c-4de6-988c-b5ae5b29274a" />
+
 
 ## 功能
 
