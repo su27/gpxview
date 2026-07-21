@@ -35,7 +35,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         var tiandituEnabled = mapServices.Tianditu is { Tk.Length: > 0, Sk.Length: > 0 };
-        for (var index = 2; index <= 4; index++)
+        for (var index = 3; index <= 5; index++)
         {
             if (MapStyleBox.Items[index] is ComboBoxItem item)
             {
@@ -335,13 +335,14 @@ public partial class MainWindow : Window
         if (!webReady || MapView.CoreWebView2 is null) return;
         var mapStyle = MapStyleBox.SelectedIndex switch
         {
-            1 => "osm",
-            2 => "tianditu-street",
-            3 => "tianditu-imagery",
-            4 => "tianditu-terrain",
-            5 => "satellite",
-            6 => "topo",
-            7 => "humanitarian",
+            1 => "outdoor",
+            2 => "osm",
+            3 => "tianditu-street",
+            4 => "tianditu-imagery",
+            5 => "tianditu-terrain",
+            6 => "satellite",
+            7 => "topo",
+            8 => "humanitarian",
             _ => "openfreemap"
         };
         var message = new { Type = "setMapStyle", MapStyle = mapStyle };
