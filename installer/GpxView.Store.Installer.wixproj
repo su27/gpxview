@@ -1,0 +1,19 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <PropertyGroup>
+    <Platform>x64</Platform>
+    <OutputType>Package</OutputType>
+    <OutputName>GpxView-0.2.0-store-win-x64</OutputName>
+    <OutputPath>$(MSBuildThisFileDirectory)..\artifacts\installer\</OutputPath>
+    <PublishDir>$(MSBuildThisFileDirectory)..\artifacts\publish\win-x64-store</PublishDir>
+    <DefineConstants>PublishDir=$(PublishDir);SourceRoot=$(MSBuildThisFileDirectory)..</DefineConstants>
+  </PropertyGroup>
+
+  <Target Name="EnsurePublishedApp" BeforeTargets="Compile">
+    <Error Condition="!Exists('$(PublishDir)\GpxView.exe')"
+           Text="Store app payload not found. Run: dotnet publish src\GpxView.App\GpxView.App.csproj -p:PublishProfile=win-x64-store" />
+    <Error Condition="Exists('$(PublishDir)\MapServices.local.json')"
+           Text="Store app payload contains MapServices.local.json. Republish with the win-x64-store profile." />
+    <Error Condition="Exists('$(PublishDir)\GpxView.exe.WebView2')"
+           Text="WebView2 user data was found in the Store publish directory. Close GpxView and republish before building the installer." />
+  </Target>
+</Project>

@@ -31,7 +31,7 @@
         <Border Grid.Row="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
             <Grid Margin="12,6">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Height="30" Padding="10,0" Margin="0,0,8,0" FontSize="12" ToolTip="打开轨迹文件"
+                    <Button x:Name="OpenButton" Height="30" Padding="10,0" Margin="0,0,8,0" FontSize="12" ToolTip="打开轨迹文件"
                             AutomationProperties.Name="打开文件" Click="OnOpenFile">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Viewbox Width="16" Height="16" Margin="0,0,6,0">
@@ -41,10 +41,10 @@
                                           StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                 </Canvas>
                             </Viewbox>
-                            <TextBlock Text="Open" VerticalAlignment="Center" />
+                            <TextBlock x:Name="OpenButtonText" Text="Open" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Height="30" Padding="10,0" Margin="0,0,16,0" FontSize="12" ToolTip="显示最近打开的轨迹"
+                    <Button x:Name="RecentButton" Height="30" Padding="10,0" Margin="0,0,16,0" FontSize="12" ToolTip="显示最近打开的轨迹"
                             AutomationProperties.Name="最近文件" Click="OnRecentFiles">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Viewbox Width="16" Height="16" Margin="0,0,6,0">
@@ -57,31 +57,21 @@
                                           StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                 </Canvas>
                             </Viewbox>
-                            <TextBlock Text="Recent" VerticalAlignment="Center" />
+                            <TextBlock x:Name="RecentButtonText" Text="Recent" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
-                        <Viewbox Width="18" Height="18" Margin="0,0,7,0" ToolTip="选择底图">
+                        <Viewbox x:Name="MapStyleIcon" Width="18" Height="18" Margin="0,0,7,0" ToolTip="选择底图">
                             <Canvas Width="24" Height="24">
                                 <Path Data="M3,5 L9,3 L15,5 L21,3 L21,19 L15,21 L9,19 L3,21 Z M9,3 L9,19 M15,5 L15,21"
                                       Fill="Transparent" Stroke="{DynamicResource SecondaryTextBrush}" StrokeThickness="1.55"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                             </Canvas>
                         </Viewbox>
-                        <ComboBox x:Name="MapStyleBox" Width="96" Height="30" FontSize="12" SelectedIndex="0" SelectionChanged="OnMapStyleChanged">
-                            <ComboBoxItem Content="现代" ToolTip="OpenFreeMap 现代矢量地图" />
-                            <ComboBoxItem Content="户外" ToolTip="户外矢量地图：步道、等高线与地形阴影" />
-                            <ComboBoxItem Content="经典" ToolTip="OpenStreetMap 经典地图" />
-                            <ComboBoxItem Content="街道" ToolTip="天地图街道" />
-                            <ComboBoxItem Content="影像" ToolTip="天地图影像" />
-                            <ComboBoxItem Content="地形" ToolTip="天地图地形" />
-                            <ComboBoxItem Content="卫星" ToolTip="Esri 卫星影像" />
-                            <ComboBoxItem Content="等高线" ToolTip="OpenTopoMap 地形与等高线" />
-                            <ComboBoxItem Content="人道主义" ToolTip="OpenStreetMap Humanitarian 风格" />
-                        </ComboBox>
+                        <ComboBox x:Name="MapStyleBox" Width="104" Height="30" FontSize="12" SelectionChanged="OnMapStyleChanged" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
-                        <Viewbox Width="18" Height="18" Margin="0,0,7,0" ToolTip="选择源坐标系">
+                        <Viewbox x:Name="CoordinateIcon" Width="18" Height="18" Margin="0,0,7,0" ToolTip="选择源坐标系">
                             <Canvas Width="24" Height="24">
                                 <Ellipse Canvas.Left="5" Canvas.Top="5" Width="14" Height="14" Fill="Transparent"
                                          Stroke="{DynamicResource SecondaryTextBrush}" StrokeThickness="1.55" />
@@ -92,18 +82,28 @@
                                          Fill="{DynamicResource SecondaryTextBrush}" />
                             </Canvas>
                         </Viewbox>
-                        <ComboBox x:Name="CoordinateBox" Width="102" Height="30" FontSize="12" SelectedIndex="0" SelectionChanged="OnCoordinateChanged">
-                            <ComboBoxItem Content="WGS84（标准）" />
-                            <ComboBoxItem Content="GCJ-02" />
-                            <ComboBoxItem Content="BD-09" />
-                        </ComboBox>
+                        <ComboBox x:Name="CoordinateBox" Width="124" Height="30" FontSize="12" SelectionChanged="OnCoordinateChanged" />
                     </StackPanel>
                     <Button x:Name="RoadNetworkButton" Width="48" Height="30" Padding="0" Margin="0,0,8,0"
-                            Content="路网" FontSize="11" ToolTip="历史轨迹密度路网" Click="OnRoadNetworkToggle" />
+                            Content="路网" FontSize="11" ToolTip="历史轨迹密度路网" Visibility="Collapsed" Click="OnRoadNetworkToggle" />
                     <Button x:Name="TerrainButton" Width="38" Height="30" Padding="0" Margin="0,0,8,0"
                             Content="3D" FontSize="12" FontWeight="SemiBold" ToolTip="切换到三维地形" Click="OnTerrainToggle" />
-                    <Button x:Name="ThemeButton" Width="30" Height="30" Padding="0"
+                    <Button x:Name="ThemeButton" Width="30" Height="30" Padding="0" Margin="0,0,8,0"
                             Content="◐" FontSize="15" ToolTip="主题：跟随系统（点击切换）" Click="OnThemeToggle" />
+                    <Button x:Name="SettingsButton" Width="30" Height="30" Padding="5"
+                            ToolTip="设置" AutomationProperties.Name="设置" Click="OnSettings">
+                        <Viewbox Width="17" Height="17">
+                            <Canvas Width="24" Height="24">
+                                <Path Data="M4,7 H20 M4,17 H20 M8,4 V10 M16,14 V20"
+                                      Fill="Transparent" Stroke="{DynamicResource SecondaryTextBrush}" StrokeThickness="1.7"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <Ellipse Canvas.Left="6.5" Canvas.Top="5.5" Width="3" Height="3"
+                                         Fill="{DynamicResource PanelBackgroundBrush}" Stroke="{DynamicResource SecondaryTextBrush}" StrokeThickness="1.5" />
+                                <Ellipse Canvas.Left="14.5" Canvas.Top="15.5" Width="3" Height="3"
+                                         Fill="{DynamicResource PanelBackgroundBrush}" Stroke="{DynamicResource SecondaryTextBrush}" StrokeThickness="1.5" />
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>

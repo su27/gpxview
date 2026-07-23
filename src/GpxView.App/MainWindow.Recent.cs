@@ -10,19 +10,27 @@ public partial class MainWindow
 {
     private const string DefaultGeocodingEndpoint = "https://nominatim.openstreetmap.org/reverse";
     private readonly RecentTrackStore recentTrackStore = new();
+    private CancellationTokenSource geocodingCancellation = new();
     private ReverseGeocoder? reverseGeocoder;
+
+    private const bool IsGeocodingAvailable = true;
+    private bool IsGeocodingEnabled => IsGeocodingAvailable && appSettings.GeocodingEnabled == true;
 
     private void HandleWebReady()
     {
         webReady = true;
+        SendLocalization();
         SendTheme();
         SendMapStyle();
         SendTerrainMode();
         SendRoadNetworkMode();
+        SendRoadNetworkConfig();
         SendTrackCollection(fit: openTracks.Count > 0);
         SendCurrentPlaceName();
         SendRecentTracks();
+        SendSettingsState();
         SetRecentPanelVisible(false);
+        SetSettingsPanelVisible(false);
     }
 
     private void HandleWebCommand(JsonElement message)
@@ -40,6 +48,29 @@ public partial class MainWindow
                 break;
             case "openFile":
                 OnOpenFile(this, new RoutedEventArgs());
+                break;
+            case "closeSettings":
+                SetSettingsPanelVisible(false);
+                break;
+            case "setLanguage" when TryReadString(message, "language", out var language):
+                SetLanguage(language);
+                break;
+            case "setGeocodingEnabled" when message.TryGetProperty("enabled", out var geocodingElement)
+                                                    && geocodingElement.ValueKind is JsonValueKind.True or JsonValueKind.False:
+                SetGeocodingEnabled(geocodingElement.GetBoolean());
+                break;
+            case "openDefaultAppsSettings":
+                OpenDefaultAppsSettings();
+                break;
+            case "openRoadNetworkFolder":
+                OpenRoadNetworkFolder();
+                break;
+            case "refreshRoadNetworks":
+                RefreshRoadNetworkArchives();
+                SendSettingsState();
+                break;
+            case "openProjectHome":
+                OpenProjectHome();
                 break;
             case "selectTrack" when TryReadTrackId(message, out var selectedTrackId):
                 SelectTrack(selectedTrackId);
@@ -62,7 +93,7 @@ public partial class MainWindow
                 break;
             case "mapError" when message.TryGetProperty("error", out var mapErrorElement)
                                  && mapErrorElement.ValueKind == JsonValueKind.String:
-                StatusText.Text = mapErrorElement.GetString() ?? "地图图层暂时无法加载";
+                StatusText.Text = mapErrorElement.GetString() ?? T("Status.MapUnavailable");
                 break;
         }
     }
@@ -83,8 +114,8 @@ public partial class MainWindow
             recentTrackStore.Save();
             SendRecentTracks();
             SetRecentPanelVisible(true);
-            MessageBox.Show(this, $"文件已不存在，已从最近记录中移除：\n{entry.Path}",
-                "找不到文件", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, TF("Dialog.MissingFileMessage", entry.Path),
+                T("Dialog.MissingFileTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -107,15 +138,13 @@ public partial class MainWindow
         try
         {
             if (entry.PlaceName is not null) return;
-            var options = mapServices.Geocoding ?? new GeocodingOptions();
-            if (!options.Enabled)
+            if (!IsGeocodingEnabled)
             {
                 if (string.Equals(currentPath, entry.Path, StringComparison.OrdinalIgnoreCase)) SendCurrentPlaceName();
                 return;
             }
 
-            reverseGeocoder ??= new ReverseGeocoder(true,
-                string.IsNullOrWhiteSpace(options.Endpoint) ? DefaultGeocodingEndpoint : options.Endpoint);
+            reverseGeocoder ??= new ReverseGeocoder(true, DefaultGeocodingEndpoint, localization.Locale);
             var placeName = await reverseGeocoder.ResolvePlaceNameAsync(entry.RepresentativeLatitude,
                 entry.RepresentativeLongitude, cancellationToken);
             if (cancellationToken.IsCancellationRequested) return;
@@ -164,9 +193,10 @@ public partial class MainWindow
     private void SendCurrentPlaceName(bool lookupFailed = false)
     {
         if (!webReady || MapView.CoreWebView2 is null) return;
-        var options = mapServices.Geocoding ?? new GeocodingOptions();
         var placeName = CurrentTrack?.PlaceName
-                        ?? (!options.Enabled ? "地点识别已关闭" : lookupFailed ? "地点暂不可用" : "正在识别地点…");
+                        ?? (!IsGeocodingEnabled
+                            ? T("Place.Disabled")
+                            : lookupFailed ? T("Place.Unavailable") : T("Place.Recognizing"));
         var message = new { Type = "setPlaceName", PlaceName = placeName };
         MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
     }
@@ -180,5 +210,41 @@ public partial class MainWindow
         return id.Length > 0;
     }
 
-    private void CloseRecentTrackServices() => reverseGeocoder?.Dispose();
+    private void StartPlaceNameResolution(RecentTrackEntry entry)
+    {
+        if (IsGeocodingEnabled && entry.PlaceName is null)
+            _ = ResolvePlaceNameAsync(entry, geocodingCancellation.Token);
+    }
+
+    private void SetGeocodingEnabled(bool enabled)
+    {
+        enabled &= IsGeocodingAvailable;
+        appSettings = appSettings with { GeocodingEnabled = enabled };
+        appSettingsStore.Save(appSettings);
+        ResetReverseGeocoder();
+        SendSettingsState();
+        SendCurrentPlaceName();
+    }
+
+    private void ResetReverseGeocoder()
+    {
+        geocodingCancellation.Cancel();
+        geocodingCancellation.Dispose();
+        geocodingCancellation = new CancellationTokenSource();
+        reverseGeocoder?.Dispose();
+        reverseGeocoder = null;
+        if (!IsGeocodingEnabled) return;
+        foreach (var track in openTracks)
+        {
+            var entry = recentTrackStore.Find(track.Path);
+            if (entry is not null) StartPlaceNameResolution(entry);
+        }
+    }
+
+    private void CloseRecentTrackServices()
+    {
+        geocodingCancellation.Cancel();
+        geocodingCancellation.Dispose();
+        reverseGeocoder?.Dispose();
+    }
 }

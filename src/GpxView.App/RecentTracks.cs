@@ -37,9 +37,7 @@ internal sealed class RecentTrackStore
 
     public RecentTrackStore(string? cachePath = null)
     {
-        this.cachePath = cachePath ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "GpxView", "recent-tracks.json");
+        this.cachePath = cachePath ?? AppPaths.RecentTracksFile;
         entries = Load().Take(MaximumEntries).ToList();
     }
 

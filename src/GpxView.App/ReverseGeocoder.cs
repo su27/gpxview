@@ -10,16 +10,20 @@ internal sealed class ReverseGeocoder : IDisposable
     private static DateTimeOffset lastRequestUtc = DateTimeOffset.MinValue;
     private readonly HttpClient httpClient;
     private readonly string endpoint;
+    private readonly string acceptLanguage;
     private readonly bool enabled;
 
-    public ReverseGeocoder(bool enabled, string endpoint)
+    public ReverseGeocoder(bool enabled, string endpoint, string locale)
     {
         this.enabled = enabled && Uri.TryCreate(endpoint, UriKind.Absolute, out var uri)
                                && uri.Scheme is "http" or "https";
         this.endpoint = endpoint;
+        acceptLanguage = locale.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "zh-CN,zh,en" : "en";
         httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GpxView/0.2.0 (+https://github.com/su27/gpxview)");
-        httpClient.DefaultRequestHeaders.AcceptLanguage.ParseAdd("zh-CN, zh;q=0.9, en;q=0.5");
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
+            $"GpxView/{BuildInfo.Version} (+https://github.com/su27/gpxview)");
+        httpClient.DefaultRequestHeaders.AcceptLanguage.ParseAdd(
+            locale.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "zh-CN, zh;q=0.9, en;q=0.5" : "en");
     }
 
     public async Task<string?> ResolvePlaceNameAsync(double latitude, double longitude,
@@ -36,7 +40,7 @@ internal sealed class ReverseGeocoder : IDisposable
 
             var separator = endpoint.Contains('?') ? '&' : '?';
             var requestUri = string.Create(CultureInfo.InvariantCulture,
-                $"{endpoint}{separator}format=jsonv2&lat={latitude:F3}&lon={longitude:F3}&zoom=10&addressdetails=1&layer=address&accept-language=zh-CN,zh,en");
+                $"{endpoint}{separator}format=jsonv2&lat={latitude:F3}&lon={longitude:F3}&zoom=10&addressdetails=1&layer=address&accept-language={Uri.EscapeDataString(acceptLanguage)}");
             using var response = await httpClient.GetAsync(requestUri, cancellationToken);
             if (!response.IsSuccessStatusCode) return null;
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);

@@ -13,14 +13,15 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 
 - 一次打开或拖放多个 `.gpx`、`.kml`、`.kmz`、`.fit`，也可从 Windows 文件资源管理器启动
 - 已打开轨迹以地图顶部标签呈现，可独立显示、隐藏和关闭；不同轨迹使用不同颜色，当前标签独占摘要、海拔图与回放控制
-- 默认使用 OpenFreeMap 现代矢量地图，并可切换免 Key 户外矢量地图、OSM 经典、天地图街道/影像/地形、Esri 卫星、OpenTopoMap、OSM 人道主义
+- 默认使用 OpenFreeMap 现代矢量地图，并可切换免 Key 户外矢量地图、OSM 经典、Esri 卫星、OpenTopoMap、OSM 人道主义；GitHub 版还可由用户配置天地图
 - 自动发现并加载多个互不重叠的本地 PMTiles 历史轨迹密度图层，并独立于底图统一显示或隐藏
 - 可一键切换 2D/3D，使用在线 DEM 将底图和轨迹贴合到真实地形，并叠加海拔分层设色、山体阴影与随主题变化的地平线雾化
 - 地图铺满内容区，摘要和图表以半透明背景模糊层覆盖在地图上，可一键收起
 - 状态栏持续显示文件格式、距离、累计爬升、总用时和轨迹点数
-- 城市级轨迹地名识别，并在当前摘要和最近轨迹中显示
+- 可选的轨迹地点识别默认关闭，首次使用前明确询问；只发送轨迹文件中的一个低精度代表坐标，不读取设备当前位置
 - 最近轨迹面板缓存文件名、统计、地名、轨迹缩略图和海拔缩略图，启动时无需重新解析原文件
-- 单图标切换跟随系统、浅色和深色主题，WPF、地图覆盖层与图表同步
+- 中英文界面可跟随系统或手动切换；单图标切换跟随系统、浅色和深色主题，WPF、地图覆盖层与图表同步
+- 设置面板集中管理语言、地点识别、Windows 文件关联、本地路网目录与清单、版本渠道、隐私政策和第三方许可
 - 轨迹可按统一颜色、海拔、坡度、速度、心率或功率动态着色
 - 可按原始时间戳或距离回放轨迹，支持变速、暂停、拖动定位、地图跟随和海拔图同步
 - 海拔作为基础曲线，可按数据存在情况叠加心率、速度和功率；悬停数值与地图位置联动
@@ -29,9 +30,9 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 - Garmin FIT GPS 与常用运动记录字段
 - WGS84 默认显示，可手动纠正实际保存为 GCJ-02 或 BD-09 的非标准源文件
 - 大轨迹在发送到地图和图表前自动抽样
-- 多尺寸 Windows 应用图标、开始菜单入口、卸载支持和四类文件关联
+- 多尺寸 Windows 应用图标、开始菜单入口和卸载支持；向 Windows 注册四类受支持文件，但不擅自修改默认打开程序
 
-键盘与鼠标操作：`Ctrl+O` 打开文件；`F11` 进入或退出全屏；全屏时也可按 `Esc` 返回；在地图上按住 `Shift` 并用鼠标左键拖动，可水平旋转地图，3D 状态下还可垂直调整倾斜角度；点击地图右上角的指南针可回到正北方向。
+键盘与鼠标操作：`Ctrl+O` 打开文件；地图获得焦点时按 `Tab` 切换摘要和海拔面板；`F11` 进入或退出全屏；全屏时也可按 `Esc` 返回；在地图上按住 `Shift` 并用鼠标左键拖动，可水平旋转地图，3D 状态下还可垂直调整倾斜角度；点击地图右上角的指南针可回到正北方向。设置、最近文件等面板中的 `Tab` 仍用于正常的键盘焦点导航。
 
 ## 安装
 
@@ -41,7 +42,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 artifacts\installer\GpxView-0.2.0-win-x64.msi
 ```
 
-安装器将 GpxView 安装到 Program Files，创建开始菜单入口，并向 Windows 注册 GPX、KML、KMZ、FIT 的打开方式和“默认应用”能力；不创建桌面快捷方式。安装包包含 .NET 10 桌面运行时，终端用户无需另行安装 .NET。现代 Windows 通常已包含 Microsoft Edge WebView2 Runtime；若该组件缺失，应用会显示修复提示。
+安装器将 GpxView 安装到 Program Files，创建开始菜单入口，并向 Windows 注册 GPX、KML、KMZ、FIT 的可选打开方式和“默认应用”能力；它不会抢占现有默认程序，也不创建桌面快捷方式。用户可在应用设置中打开 Windows“默认应用”页面自行选择。安装包包含 .NET 10 桌面运行时，终端用户无需另行安装 .NET。现代 Windows 通常已包含 Microsoft Edge WebView2 Runtime；若该组件缺失，应用会显示修复提示。
 
 ## 技术栈
 
@@ -68,7 +69,7 @@ dotnet run --project src\GpxView.App\GpxView.App.csproj
 
 ## 地图服务配置
 
-复制示例配置并按需填写在天地图服务中心申请的浏览器端 Key 和安全密钥：
+GitHub 版可复制示例配置，并按需填写在天地图服务中心申请的浏览器端 Key 和安全密钥：
 
 ```powershell
 Copy-Item src\GpxView.App\MapServices.example.json src\GpxView.App\MapServices.local.json
@@ -81,15 +82,11 @@ Copy-Item src\GpxView.App\MapServices.example.json src\GpxView.App\MapServices.l
   "tianditu": {
     "tk": "YOUR_BROWSER_KEY",
     "sk": "YOUR_SECURITY_KEY"
-  },
-  "geocoding": {
-    "enabled": true,
-    "endpoint": "https://nominatim.openstreetmap.org/reverse"
   }
 }
 ```
 
-`MapServices.local.json` 已被 Git 忽略，并会复制到开发输出和自包含发布目录。缺少有效的 `tk` 或 `sk` 时，三个天地图选项会自动禁用。
+`MapServices.local.json` 只保存天地图凭据，已被 Git 忽略。它仅会复制到 GitHub 渠道的开发输出和发布目录；缺少有效的 `tk` 或 `sk` 时，三个天地图选项会自动禁用。Microsoft Store 渠道在编译时移除天地图入口、忽略该文件，并在运行时再次丢弃天地图配置，因此不会把本机 Key 带入商店包。
 
 天地图官方建议安全密钥仅由自有代理服务器追加。当前桌面版本没有代理，在开启安全密钥后必须把 `tk` 与 `sk` 一起发送给 WMTS，因此该配置虽然不会进入 Git，仍会包含在发布目录和 MSI 中，也能被终端用户提取。当前方式只适合自用和小范围测试；公开分发前应改为用户自行配置或由受控代理转发。
 
@@ -118,7 +115,7 @@ python tools\roadnet\build_density_pmtiles.py `
 
 转换器以不同的 `ORIGINALID` 作为通行次数，而不是直接累计 GPS 点，避免采样频率和 `PCOUNT` 放大热度；每个缩放层使用非零像素的 p99 和 `log1p` 映射热度。应用通过内部虚拟地址按 Range 请求读取最终归档，不监听本地端口。
 
-转换器默认生成 lossless WebP，并设置 2 万条源记录保护上限；扩大范围时必须显式提高 `--max-records`。应用启动时会扫描 `%LOCALAPPDATA%\GpxView\RoadNetwork` 顶层的所有 `*.pmtiles`，跳过损坏或不支持的文件，并为每个有效归档建立独立 Range 地址和地图图层。当前约定这些归档的覆盖范围互不重叠；备份文件可放入子目录，子目录不会被扫描。本地没有有效归档时，“路网”按钮保持禁用。
+转换器默认生成 lossless WebP，并设置 2 万条源记录保护上限；扩大范围时必须显式提高 `--max-records`。应用启动时会扫描 `%LOCALAPPDATA%\GpxView\RoadNetwork` 顶层的所有 `*.pmtiles`，跳过损坏或不支持的文件，并为每个有效归档建立独立 Range 地址和地图图层。当前约定这些归档的覆盖范围互不重叠；备份文件可放入子目录，子目录不会被扫描。本地没有有效归档时，不显示“路网”按钮。
 
 例如生成北京范围、最高到 z16 的归档：
 
@@ -138,25 +135,46 @@ python tools\roadnet\build_density_pmtiles.py `
 
 应用最多保存 20 条最近轨迹到 `%LOCALAPPDATA%\GpxView\recent-tracks.json`。缓存包含原文件路径、格式、距离、爬升、地名及经过归一化抽样的轨迹和海拔缩略数据；打开最近面板不会重新读取轨迹文件。点击记录时才检查原文件，文件不存在会提示并从历史中删除。
 
-首次打开一个尚未缓存地名的新位置时，应用会把轨迹中最长分段的中间点以 WGS84 坐标发送给 OpenStreetMap Foundation 的 Nominatim 反向地理编码服务，并请求城市级结果。结果会持久化复用；请求使用明确的 GpxView User-Agent、全应用串行且间隔不少于 1.1 秒，不执行批量或周期查询。界面显示 OpenStreetMap/Nominatim 署名。
+地点识别默认关闭，首次运行会询问是否开启。只有用户明确允许后，应用才会把轨迹中最长分段的中间点以约 3 位小数的 WGS84 坐标发送给 OpenStreetMap Foundation 的 Nominatim 反向地理编码服务，并请求地区名称。它不读取设备当前位置、不使用 Windows 定位服务，也不上传文件或完整轨迹。结果会持久化复用；请求使用明确且随版本变化的 GpxView User-Agent、全应用串行且间隔不少于 1.1 秒，不执行批量或周期查询。界面显示 OpenStreetMap/Nominatim 署名。
 
-这意味着轨迹的一个代表坐标会发送给 OSMF。若不希望发送，可在 `MapServices.local.json` 中把 `geocoding.enabled` 设为 `false`；也可以修改 `geocoding.endpoint` 切换到自建或其他兼容的 Nominatim 服务，无需修改程序代码。公共 Nominatim 容量有限，当前实现适合低频桌面使用；大规模分发应使用受控代理、自建实例或有容量保障的服务。
+这意味着轨迹文件中的一个代表坐标和常规网络请求信息会发送给 OSMF，因此仍属于需要说明的可选数据传输。用户可随时在设置中关闭；关闭后不会再发起新请求，已缓存在本机的地点名称仍可显示。公共 Nominatim 容量有限，当前实现适合低频桌面使用；大规模分发应使用受控代理、自建实例或有容量保障的服务。应用内置中英文[隐私政策](src/GpxView.App/Web/legal/privacy.zh-CN.md)和[第三方许可说明](src/GpxView.App/Web/legal/third-party-notices.md)。
 
-## 发布与安装器构建
+## GitHub 与 Microsoft Store 渠道
 
-先生成不裁剪的 64 位自包含发布目录，再构建 MSI：
+两个渠道共享同一套代码、设置、国际化、轨迹和路网功能。唯一的功能差异由 `DistributionChannel` 构建属性控制：
+
+- `GitHub`：允许显示天地图选项，并可复制本机 `MapServices.local.json`。
+- `Store`：定义 `GPXVIEW_STORE`，不生成天地图选项、不复制本机配置，并在读取配置时再次清除天地图凭据。
+
+分别生成两个不裁剪的 64 位自包含目录：
 
 ```powershell
 dotnet publish src\GpxView.App\GpxView.App.csproj -p:PublishProfile=win-x64
-dotnet build installer\GpxView.Installer.wixproj -c Release
+dotnet publish src\GpxView.App\GpxView.App.csproj -p:PublishProfile=win-x64-store
 ```
-
-输出目录：
 
 ```text
 artifacts\publish\win-x64\
-artifacts\installer\GpxView-0.2.0-win-x64.msi
+artifacts\publish\win-x64-store\
 ```
+
+Store 发布目录是与商店包身份解耦的应用载荷。若 Partner Center 为该产品开放 Win32 MSI 提交流程，可构建只读取 Store 载荷的安装器：
+
+```powershell
+dotnet build installer\GpxView.Store.Installer.wixproj -c Release
+```
+
+输出为 `artifacts\installer\GpxView-0.2.0-store-win-x64.msi`。该项目会在构建时再次拒绝任何包含 `MapServices.local.json` 的 Store 载荷。
+
+如果选择 MSIX 流程，则在 Partner Center 中预留产品后，再用分配的 Identity、Publisher 和签名信息包装同一 Store 载荷；不要在仓库中伪造 Publisher identity。
+
+GitHub MSI 使用 GitHub 渠道的发布目录：
+
+```powershell
+dotnet build installer\GpxView.Installer.wixproj -c Release
+```
+
+输出为 `artifacts\installer\GpxView-0.2.0-win-x64.msi`。
 
 应用图标如需从可编辑源重新生成：
 
@@ -173,9 +191,9 @@ GPX、KML 和 FIT 按规范默认视为 WGS84，直接显示在 OpenFreeMap、OS
 - OpenFreeMap 现代：默认使用 Liberty 矢量样式，基于 OpenMapTiles 与 OpenStreetMap 数据，无需 API Key。
 - OpenFreeMap 户外：以 Bright 矢量样式为基础，叠加 Mapterhorn 地形和本地动态等高线；详见“户外矢量地图”。
 - OSM 经典：OpenStreetMap Foundation 公共栅格瓦片服务。
-- 天地图街道：`vec_w` 底图叠加 `cva_w` 中文注记。
-- 天地图影像：`img_w` 影像叠加 `cia_w` 中文注记。
-- 天地图地形：`ter_w` 地形晕渲叠加 `cta_w` 中文注记。
+- 天地图街道（仅 GitHub 版）：`vec_w` 底图叠加 `cva_w` 中文注记。
+- 天地图影像（仅 GitHub 版）：`img_w` 影像叠加 `cia_w` 中文注记。
+- 天地图地形（仅 GitHub 版）：`ter_w` 地形晕渲叠加 `cta_w` 中文注记。
 - Esri 卫星：Esri World Imagery。
 - OpenTopoMap：OSM 数据与 SRTM 地形风格。
 - OSM 人道主义：OSM France 托管的 HOT 风格瓦片。

@@ -40,17 +40,11 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitializeApplicationSettings();
+        PopulateToolbarSelectors();
         InitializeRoadNetwork();
-        var tiandituEnabled = mapServices.Tianditu is { Tk.Length: > 0, Sk.Length: > 0 };
-        for (var index = 3; index <= 5; index++)
-        {
-            if (MapStyleBox.Items[index] is ComboBoxItem item)
-            {
-                item.IsEnabled = tiandituEnabled;
-                if (!tiandituEnabled) item.ToolTip = "请配置 MapServices.local.json";
-            }
-        }
         SystemEvents.UserPreferenceChanged += OnSystemPreferenceChanged;
+        ApplyLocalization();
         ApplyTheme();
     }
 
@@ -58,10 +52,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            var webViewDataFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "GpxView", "WebView2");
-            var webEnvironment = await CoreWebView2Environment.CreateAsync(userDataFolder: webViewDataFolder);
+            var webEnvironment = await CoreWebView2Environment.CreateAsync(userDataFolder: AppPaths.WebViewDataFolder);
             await MapView.EnsureCoreWebView2Async(webEnvironment);
             var core = MapView.CoreWebView2;
             MapView.AllowExternalDrop = false;
@@ -93,9 +84,9 @@ public partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            StatusText.Text = "WebView2 初始化失败，地图暂不可用。";
-            MessageBox.Show(this, $"无法初始化地图组件：\n{exception.Message}\n\n请安装或修复 Microsoft Edge WebView2 Runtime。",
-                "地图初始化失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+            StatusText.Text = T("Status.WebViewFailed");
+            MessageBox.Show(this, TF("Dialog.WebViewMessage", exception.Message),
+                T("Dialog.WebViewTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -171,12 +162,12 @@ public partial class MainWindow : Window
             DisplayTheme.Dark => "☾",
             _ => "◐"
         };
-        ThemeButton.ToolTip = $"主题：{selectedTheme switch
+        ThemeButton.ToolTip = TF("Theme.Tooltip", T(selectedTheme switch
         {
-            DisplayTheme.Light => "浅色",
-            DisplayTheme.Dark => "深色",
-            _ => "跟随系统"
-        }}（点击切换）";
+            DisplayTheme.Light => "Theme.Light",
+            DisplayTheme.Dark => "Theme.Dark",
+            _ => "Theme.System"
+        }));
         SendTheme();
     }
 
@@ -203,8 +194,8 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFileDialog
         {
-            Title = "打开轨迹文件",
-            Filter = "轨迹文件 (*.gpx;*.kml;*.kmz;*.fit)|*.gpx;*.kml;*.kmz;*.fit|所有文件 (*.*)|*.*",
+            Title = T("Dialog.OpenTitle"),
+            Filter = T("Dialog.TrackFilter"),
             CheckFileExists = true,
             Multiselect = true
         };
@@ -281,12 +272,12 @@ public partial class MainWindow : Window
 
     private async void OnCoordinateChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (IsLoaded && openTracks.Count > 0) await ReloadOpenTracksAsync();
+        if (!updatingToolbarSelectors && IsLoaded && openTracks.Count > 0) await ReloadOpenTracksAsync();
     }
 
     private void OnMapStyleChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (IsLoaded) SendMapStyle();
+        if (!updatingToolbarSelectors && IsLoaded) SendMapStyle();
     }
 
     private async Task LoadFilesAsync(IEnumerable<string> paths)
@@ -316,8 +307,8 @@ public partial class MainWindow : Window
             }
 
             StatusText.Text = requestedPaths.Length == 1
-                ? $"正在打开 {Path.GetFileName(path)}"
-                : $"正在打开 {index + 1}/{requestedPaths.Length} · {Path.GetFileName(path)}";
+                ? TF("Status.Opening", Path.GetFileName(path))
+                : TF("Status.OpeningBatch", index + 1, requestedPaths.Length, Path.GetFileName(path));
             try
             {
                 var options = new TrackLoadOptions { SourceCoordinateSystem = GetSelectedCoordinateSystem() };
@@ -332,7 +323,7 @@ public partial class MainWindow : Window
                 openTracks.Add(track);
                 activeTrackId = track.Id;
                 addedTrack = true;
-                _ = ResolvePlaceNameAsync(recentEntry, lifetimeCancellation.Token);
+                StartPlaceNameResolution(recentEntry);
             }
             catch (OperationCanceledException)
             {
@@ -342,11 +333,11 @@ public partial class MainWindow : Window
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
             {
-                failures.Add($"{Path.GetFileName(path)}：{exception.Message}");
+                failures.Add(TF("Dialog.FileError", Path.GetFileName(path), exception.Message));
             }
             catch (Exception exception)
             {
-                failures.Add($"{Path.GetFileName(path)}：读取时发生未预期错误（{exception.Message}）");
+                failures.Add(TF("Dialog.UnexpectedReadError", Path.GetFileName(path), exception.Message));
             }
         }
 
@@ -357,7 +348,7 @@ public partial class MainWindow : Window
         SetRecentPanelVisible(false);
 
         if (failures.Count == 0) return;
-        MessageBox.Show(this, string.Join("\n\n", failures), "部分轨迹无法打开",
+        MessageBox.Show(this, string.Join("\n\n", failures), T("Dialog.PartialOpenTitle"),
             MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
@@ -372,7 +363,7 @@ public partial class MainWindow : Window
         for (var index = 0; index < openTracks.Count; index++)
         {
             var track = openTracks[index];
-            StatusText.Text = $"正在重新解析 {index + 1}/{openTracks.Count} · {Path.GetFileName(track.Path)}";
+            StatusText.Text = TF("Status.Reloading", index + 1, openTracks.Count, Path.GetFileName(track.Path));
             try
             {
                 var options = new TrackLoadOptions { SourceCoordinateSystem = GetSelectedCoordinateSystem() };
@@ -383,7 +374,7 @@ public partial class MainWindow : Window
                 track.Statistics = statistics;
                 var recentEntry = RegisterRecentTrack(track.Path, document, statistics);
                 track.PlaceName = recentEntry.PlaceName;
-                _ = ResolvePlaceNameAsync(recentEntry, lifetimeCancellation.Token);
+                StartPlaceNameResolution(recentEntry);
             }
             catch (OperationCanceledException)
             {
@@ -393,11 +384,11 @@ public partial class MainWindow : Window
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
             {
-                failures.Add($"{Path.GetFileName(track.Path)}：{exception.Message}");
+                failures.Add(TF("Dialog.FileError", Path.GetFileName(track.Path), exception.Message));
             }
             catch (Exception exception)
             {
-                failures.Add($"{Path.GetFileName(track.Path)}：重新解析时发生未预期错误（{exception.Message}）");
+                failures.Add(TF("Dialog.UnexpectedReloadError", Path.GetFileName(track.Path), exception.Message));
             }
         }
 
@@ -406,17 +397,15 @@ public partial class MainWindow : Window
         SendCurrentPlaceName();
         if (failures.Count > 0)
         {
-            MessageBox.Show(this, string.Join("\n\n", failures), "部分轨迹无法重新解析",
+            MessageBox.Show(this, string.Join("\n\n", failures), T("Dialog.PartialReloadTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
-    private SourceCoordinateSystem GetSelectedCoordinateSystem() => CoordinateBox.SelectedIndex switch
-    {
-        1 => SourceCoordinateSystem.Gcj02,
-        2 => SourceCoordinateSystem.Bd09,
-        _ => SourceCoordinateSystem.Wgs84
-    };
+    private SourceCoordinateSystem GetSelectedCoordinateSystem() =>
+        (CoordinateBox.SelectedItem as ComboBoxItem)?.Tag is SourceCoordinateSystem coordinateSystem
+            ? coordinateSystem
+            : SourceCoordinateSystem.Wgs84;
 
     private void SendTheme()
     {
@@ -428,18 +417,7 @@ public partial class MainWindow : Window
     private void SendMapStyle()
     {
         if (!webReady || MapView.CoreWebView2 is null) return;
-        var mapStyle = MapStyleBox.SelectedIndex switch
-        {
-            1 => "outdoor",
-            2 => "osm",
-            3 => "tianditu-street",
-            4 => "tianditu-imagery",
-            5 => "tianditu-terrain",
-            6 => "satellite",
-            7 => "topo",
-            8 => "humanitarian",
-            _ => "openfreemap"
-        };
+        var mapStyle = (MapStyleBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "openfreemap";
         var message = new { Type = "setMapStyle", MapStyle = mapStyle };
         MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
     }
@@ -454,7 +432,7 @@ public partial class MainWindow : Window
     private void UpdateTerrainButton()
     {
         TerrainButton.Content = terrainEnabled ? "2D" : "3D";
-        TerrainButton.ToolTip = terrainEnabled ? "切换到二维地图" : "切换到三维地形";
+        TerrainButton.ToolTip = T(terrainEnabled ? "Terrain.Disable" : "Terrain.Enable");
     }
 
     private void SetTerrainState(bool enabled, string? error)
@@ -561,7 +539,7 @@ public partial class MainWindow : Window
         if (track is null)
         {
             Title = "GpxView";
-            StatusText.Text = "就绪";
+            StatusText.Text = T("App.Ready");
             StatusSummaryText.Text = string.Empty;
             StatusSummaryText.Visibility = Visibility.Collapsed;
             return;
@@ -575,7 +553,7 @@ public partial class MainWindow : Window
         StatusSummaryText.Visibility = Visibility.Visible;
     }
 
-    private static WebTrackPayload BuildWebTrackPayload(OpenTrackState track)
+    private WebTrackPayload BuildWebTrackPayload(OpenTrackState track)
     {
         const int maximumMapPoints = 30_000;
         const int maximumProfilePoints = 8_000;
@@ -636,14 +614,15 @@ public partial class MainWindow : Window
             track.Visible, track.PlaceName, segments, profile, BuildWebSummary(document, statistics));
     }
 
-    private static WebSummary BuildWebSummary(TrackDocument document, TrackStatistics statistics)
+    private WebSummary BuildWebSummary(TrackDocument document, TrackStatistics statistics)
     {
         var sensorValues = new List<string>(2);
         if (statistics.AverageCadenceRpm is { } averageCadence) sensorValues.Add($"{averageCadence:N0} rpm");
         if (statistics.AveragePowerWatts is { } averagePower) sensorValues.Add($"{averagePower:N0} W");
 
         return new WebSummary(
-            $"{document.Format.ToString().ToUpperInvariant()} · {statistics.SegmentCount} 分段 · {statistics.PointCount:N0} 轨迹点",
+            TF("Summary.FormatLine", document.Format.ToString().ToUpperInvariant(),
+                statistics.SegmentCount, statistics.PointCount),
             statistics.DistanceMeters >= 1000 ? $"{statistics.DistanceMeters / 1000:N2} km" : $"{statistics.DistanceMeters:N0} m",
             statistics.Duration > TimeSpan.Zero ? $"{FormatDuration(statistics.Duration)} / {FormatDuration(statistics.MovingTime)}" : null,
             statistics.MinimumElevationMeters is not null ? $"↑ {statistics.ElevationGainMeters:N0} m   ↓ {statistics.ElevationLossMeters:N0} m" : null,
@@ -654,7 +633,7 @@ public partial class MainWindow : Window
             sensorValues.Count > 0 ? string.Join(" / ", sensorValues) : null);
     }
 
-    private static string BuildStatusSummary(TrackDocument document, TrackStatistics statistics)
+    private string BuildStatusSummary(TrackDocument document, TrackStatistics statistics)
     {
         var values = new List<string>
         {
@@ -665,7 +644,7 @@ public partial class MainWindow : Window
         };
         if (statistics.MinimumElevationMeters is not null) values.Add($"↑ {statistics.ElevationGainMeters:N0} m");
         if (statistics.Duration > TimeSpan.Zero) values.Add(FormatDuration(statistics.Duration));
-        values.Add($"{statistics.PointCount:N0} 点");
+        values.Add(TF("Summary.StatusPoints", statistics.PointCount));
         return string.Join("  ·  ", values);
     }
 
@@ -680,8 +659,9 @@ public partial class MainWindow : Window
 
         try
         {
-            return JsonSerializer.Deserialize<MapServiceOptions>(File.ReadAllText(path), JsonOptions)
-                   ?? new MapServiceOptions();
+            var options = JsonSerializer.Deserialize<MapServiceOptions>(File.ReadAllText(path), JsonOptions)
+                          ?? new MapServiceOptions();
+            return BuildInfo.SupportsTianditu ? options : options with { Tianditu = null };
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
         {
@@ -710,19 +690,12 @@ public partial class MainWindow : Window
     private sealed record MapServiceOptions
     {
         public TiandituOptions? Tianditu { get; init; }
-        public GeocodingOptions? Geocoding { get; init; }
     }
 
     private sealed record TiandituOptions
     {
         public string Tk { get; init; } = string.Empty;
         public string Sk { get; init; } = string.Empty;
-    }
-
-    private sealed record GeocodingOptions
-    {
-        public bool Enabled { get; init; } = true;
-        public string Endpoint { get; init; } = DefaultGeocodingEndpoint;
     }
 
     private sealed class OpenTrackState(

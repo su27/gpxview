@@ -61,13 +61,9 @@
         <RegistryValue Root="HKLM" Key="Software\Classes\GpxView.Track\DefaultIcon" Type="string" Value="[INSTALLFOLDER]GpxView.exe,0" />
         <RegistryValue Root="HKLM" Key="Software\Classes\GpxView.Track\shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]GpxView.exe&quot; &quot;%1&quot;" />
 
-        <RegistryValue Root="HKLM" Key="Software\Classes\.gpx" Type="string" Value="GpxView.Track" />
         <RegistryValue Root="HKLM" Key="Software\Classes\.gpx\OpenWithProgids" Name="GpxView.Track" Type="string" Value="" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\.kml" Type="string" Value="GpxView.Track" />
         <RegistryValue Root="HKLM" Key="Software\Classes\.kml\OpenWithProgids" Name="GpxView.Track" Type="string" Value="" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\.kmz" Type="string" Value="GpxView.Track" />
         <RegistryValue Root="HKLM" Key="Software\Classes\.kmz\OpenWithProgids" Name="GpxView.Track" Type="string" Value="" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\.fit" Type="string" Value="GpxView.Track" />
         <RegistryValue Root="HKLM" Key="Software\Classes\.fit\OpenWithProgids" Name="GpxView.Track" Type="string" Value="" />
 
         <RegistryValue Root="HKLM" Key="Software\Classes\Applications\GpxView.exe" Name="FriendlyAppName" Type="string" Value="GpxView" />

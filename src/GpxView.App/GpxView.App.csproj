@@ -16,9 +16,14 @@
     </Content>
     <Resource Include="Assets\GpxView.ico" />
     <Resource Include="Assets\GpxView.png" />
-    <None Update="MapServices.local.json" Condition="Exists('MapServices.local.json')">
+    <None Update="MapServices.local.json"
+          Condition="Exists('MapServices.local.json') and '$(DistributionChannel)' == 'GitHub'">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Update="MapServices.local.json" Condition="'$(DistributionChannel)' == 'Store'">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
   </ItemGroup>
 
@@ -39,6 +44,22 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Assets\GpxView.ico</ApplicationIcon>
+    <DistributionChannel Condition="'$(DistributionChannel)' == ''">GitHub</DistributionChannel>
+    <DefineConstants Condition="'$(DistributionChannel)' == 'Store'">$(DefineConstants);GPXVIEW_STORE</DefineConstants>
   </PropertyGroup>
+
+  <Target Name="ValidateDistributionChannel" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(DistributionChannel)' != 'GitHub' and '$(DistributionChannel)' != 'Store'"
+           Text="DistributionChannel must be GitHub or Store." />
+    <Error Condition="'$(DistributionChannel)' == 'Store' and $([System.String]::Copy('$(DefineConstants)').Contains('GPXVIEW_STORE')) != 'True'"
+           Text="Store builds must define GPXVIEW_STORE." />
+    <Error Condition="'$(DistributionChannel)' == 'GitHub' and $([System.String]::Copy('$(DefineConstants)').Contains('GPXVIEW_STORE')) == 'True'"
+           Text="GitHub builds must not define GPXVIEW_STORE." />
+  </Target>
+
+  <Target Name="ValidateStorePublishPayload" AfterTargets="Publish" Condition="'$(DistributionChannel)' == 'Store'">
+    <Error Condition="Exists('$(PublishDir)MapServices.local.json')"
+           Text="Store publish payload must not contain MapServices.local.json." />
+  </Target>
 
 </Project>

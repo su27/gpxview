@@ -14,17 +14,19 @@ public partial class MainWindow
     private readonly List<LocalRoadNetworkArchive> roadNetworkArchives = [];
     private readonly Dictionary<string, PmTilesArchive> roadNetworkArchivesByPath =
         new(StringComparer.Ordinal);
+    private bool roadNetworkInitialized;
     private bool roadNetworkEnabled;
 
-    private void InitializeRoadNetwork()
+    private void InitializeRoadNetwork() => RefreshRoadNetworkArchives(notifyWeb: false);
+
+    private void RefreshRoadNetworkArchives(bool notifyWeb = true)
     {
-        var folder = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "GpxView", "RoadNetwork");
+        var wasAvailable = roadNetworkArchives.Count > 0;
+        var wasEnabled = roadNetworkEnabled;
         roadNetworkArchives.Clear();
         roadNetworkArchivesByPath.Clear();
 
-        foreach (var archive in PmTilesArchive.Discover(folder))
+        foreach (var archive in PmTilesArchive.Discover(AppPaths.RoadNetworkFolder))
         {
             var id = $"local-{roadNetworkArchives.Count}";
             var requestPath = $"/archives/{id}";
@@ -35,8 +37,13 @@ public partial class MainWindow
             roadNetworkArchivesByPath.Add(requestPath, archive);
         }
 
-        roadNetworkEnabled = roadNetworkArchives.Count > 0;
+        var available = roadNetworkArchives.Count > 0;
+        roadNetworkEnabled = available && (!roadNetworkInitialized || !wasAvailable || wasEnabled);
+        roadNetworkInitialized = true;
         UpdateRoadNetworkButton();
+        if (!notifyWeb) return;
+        SendRoadNetworkConfig();
+        SendRoadNetworkMode();
     }
 
     private object GetRoadNetworkWebConfig()
@@ -71,14 +78,30 @@ public partial class MainWindow
         return new
         {
             Available = archives.Length > 0,
+            Enabled = roadNetworkEnabled,
             Archives = archives,
             Bounds = bounds
         };
     }
 
+    private object[] BuildRoadNetworkSettingsPayload() => roadNetworkArchives.Select(entry => (object)new
+    {
+        entry.Name,
+        FileName = Path.GetFileName(entry.Archive.Path),
+        Bytes = entry.Archive.Length,
+        entry.Archive.MinZoom,
+        entry.Archive.MaxZoom,
+        Bounds = new[]
+        {
+            entry.Archive.West,
+            entry.Archive.South,
+            entry.Archive.East,
+            entry.Archive.North
+        }
+    }).ToArray();
+
     private void ConfigureRoadNetworkRequests(CoreWebView2 core)
     {
-        if (roadNetworkArchives.Count == 0) return;
         core.AddWebResourceRequestedFilter("https://roadnet.gpxview/archives/*", CoreWebView2WebResourceContext.All);
         core.WebResourceRequested += OnRoadNetworkResourceRequested;
     }
@@ -148,34 +171,40 @@ public partial class MainWindow
         MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
     }
 
+    private void SendRoadNetworkConfig()
+    {
+        if (!webReady || MapView.CoreWebView2 is null) return;
+        var message = new { Type = "setRoadNetworkConfig", Config = GetRoadNetworkWebConfig() };
+        MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
+    }
+
     private void UpdateRoadNetworkButton()
     {
         var available = roadNetworkArchives.Count > 0;
         RoadNetworkButton.IsEnabled = available;
+        RoadNetworkButton.Visibility = available ? Visibility.Visible : Visibility.Collapsed;
         RoadNetworkButton.FontWeight = roadNetworkEnabled ? FontWeights.SemiBold : FontWeights.Normal;
-        RoadNetworkButton.Opacity = !available ? 0.42 : roadNetworkEnabled ? 1 : 0.62;
-        RoadNetworkButton.ToolTip = available
-            ? roadNetworkEnabled
-                ? $"隐藏{RoadNetworkDescription()}路网"
-                : $"显示{RoadNetworkDescription()}路网"
-            : "未找到本地 PMTiles 路网文件";
+        RoadNetworkButton.Opacity = roadNetworkEnabled ? 1 : 0.62;
+        RoadNetworkButton.ToolTip = roadNetworkEnabled
+            ? TF("RoadNetwork.HideOne", RoadNetworkDescription())
+            : TF("RoadNetwork.ShowOne", RoadNetworkDescription());
     }
 
     private string RoadNetworkDescription() => roadNetworkArchives.Count == 1
         ? roadNetworkArchives[0].Name
-        : $"{roadNetworkArchives.Count} 个本地历史轨迹";
+        : TF("RoadNetwork.Count", roadNetworkArchives.Count);
 
-    private static string GetRoadNetworkDisplayName(string path) =>
+    private string GetRoadNetworkDisplayName(string path) =>
         Path.GetFileNameWithoutExtension(path) switch
         {
-            "beijing-density" => "北京历史轨迹密度（2017）",
-            "mentougou-density" => "门头沟历史轨迹密度（实验）",
+            "beijing-density" => T("RoadNetwork.Beijing"),
+            "mentougou-density" => T("RoadNetwork.Mentougou"),
             var fileName => fileName
         };
 
     private void CloseRoadNetworkServices()
     {
-        if (MapView.CoreWebView2 is not { } core || roadNetworkArchives.Count == 0) return;
+        if (MapView.CoreWebView2 is not { } core) return;
         core.WebResourceRequested -= OnRoadNetworkResourceRequested;
     }
 
