@@ -11,8 +11,10 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 
 ## 功能
 
-- 打开、拖放或从 Windows 文件资源管理器启动 `.gpx`、`.kml`、`.kmz`、`.fit`
+- 一次打开或拖放多个 `.gpx`、`.kml`、`.kmz`、`.fit`，也可从 Windows 文件资源管理器启动
+- 已打开轨迹以地图顶部标签呈现，可独立显示、隐藏和关闭；不同轨迹使用不同颜色，当前标签独占摘要、海拔图与回放控制
 - 默认使用 OpenFreeMap 现代矢量地图，并可切换免 Key 户外矢量地图、OSM 经典、天地图街道/影像/地形、Esri 卫星、OpenTopoMap、OSM 人道主义
+- 自动发现并加载多个互不重叠的本地 PMTiles 历史轨迹密度图层，并独立于底图统一显示或隐藏
 - 可一键切换 2D/3D，使用在线 DEM 将底图和轨迹贴合到真实地形，并叠加海拔分层设色、山体阴影与随主题变化的地平线雾化
 - 地图铺满内容区，摘要和图表以半透明背景模糊层覆盖在地图上，可一键收起
 - 状态栏持续显示文件格式、距离、累计爬升、总用时和轨迹点数
@@ -36,7 +38,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 构建出的 64 位 MSI 位于：
 
 ```text
-artifacts\installer\GpxView-0.1.4-win-x64.msi
+artifacts\installer\GpxView-0.2.0-win-x64.msi
 ```
 
 安装器将 GpxView 安装到 Program Files，创建开始菜单入口，并向 Windows 注册 GPX、KML、KMZ、FIT 的打开方式和“默认应用”能力；不创建桌面快捷方式。安装包包含 .NET 10 桌面运行时，终端用户无需另行安装 .NET。现代 Windows 通常已包含 Microsoft Edge WebView2 Runtime；若该组件缺失，应用会显示修复提示。
@@ -47,6 +49,7 @@ artifacts\installer\GpxView-0.1.4-win-x64.msi
 - Microsoft WebView2
 - 随应用本地分发的 MapLibre GL JS 5.6.2
 - 随应用本地分发的 maplibre-contour 0.1.0，在 Web Worker 中从 DEM 生成矢量等高线
+- 随应用本地分发的 PMTiles JavaScript 4.4.1，通过 WebView2 Range 响应读取多个本地单文件瓦片包
 - OpenFreeMap/OpenMapTiles 矢量地图，Mapterhorn DEM，以及 OSM 系、天地图与 Esri 栅格地图服务
 - Garmin.FIT.Sdk 21.205.0
 - WiX Toolset SDK 5.0.2
@@ -98,6 +101,39 @@ Copy-Item src\GpxView.App\MapServices.example.json src\GpxView.App\MapServices.l
 
 Mapterhorn 当前提供到 12 级的原生 DEM，应用在更高层级使用过缩放，并从 8 级开始请求等高线，以减少无效请求和不必要的计算。等高线加载失败时仍保留 OpenFreeMap 户外矢量底图，并在状态栏显示降级提示。
 
+## 历史轨迹路网实验
+
+仓库包含一个离线工具，可把用户持有的两步路历史路网省份包转换为透明栅格 PMTiles。默认参数仍选择门头沟中西部 `115.9–116.0E / 39.9–40.0N` 作为快速实验范围；也可以显式扩大边界和记录数上限，按缩放层分块、缓存并续算省级数据。
+
+先安装工具依赖，再生成实验包：
+
+```powershell
+python -m pip install -r tools\roadnet\requirements.txt
+python tools\roadnet\build_density_pmtiles.py `
+  C:\Users\su27\Downloads\北京.zip `
+  "$env:LOCALAPPDATA\GpxView\RoadNetwork\mentougou-density.pmtiles" `
+  --bounds 115.9,39.9,116.0,40.0 `
+  --preview artifacts\roadnet\mentougou-density-preview.png
+```
+
+转换器以不同的 `ORIGINALID` 作为通行次数，而不是直接累计 GPS 点，避免采样频率和 `PCOUNT` 放大热度；每个缩放层使用非零像素的 p99 和 `log1p` 映射热度。应用通过内部虚拟地址按 Range 请求读取最终归档，不监听本地端口。
+
+转换器默认生成 lossless WebP，并设置 2 万条源记录保护上限；扩大范围时必须显式提高 `--max-records`。应用启动时会扫描 `%LOCALAPPDATA%\GpxView\RoadNetwork` 顶层的所有 `*.pmtiles`，跳过损坏或不支持的文件，并为每个有效归档建立独立 Range 地址和地图图层。当前约定这些归档的覆盖范围互不重叠；备份文件可放入子目录，子目录不会被扫描。本地没有有效归档时，“路网”按钮保持禁用。
+
+例如生成北京范围、最高到 z16 的归档：
+
+```powershell
+python tools\roadnet\build_density_pmtiles.py `
+  C:\Users\su27\Downloads\北京.zip `
+  "$env:LOCALAPPDATA\GpxView\RoadNetwork\beijing-density.pmtiles" `
+  --bounds 115.5,39.5,117.5,41.0 `
+  --maxzoom 16 `
+  --max-records 300000 `
+  --metatile-size 32 `
+  --name "Beijing historical trajectory density (2017)" `
+  --preview artifacts\roadnet\beijing-density-preview.png
+```
+
 ## 最近轨迹与地名
 
 应用最多保存 20 条最近轨迹到 `%LOCALAPPDATA%\GpxView\recent-tracks.json`。缓存包含原文件路径、格式、距离、爬升、地名及经过归一化抽样的轨迹和海拔缩略数据；打开最近面板不会重新读取轨迹文件。点击记录时才检查原文件，文件不存在会提示并从历史中删除。
@@ -119,7 +155,7 @@ dotnet build installer\GpxView.Installer.wixproj -c Release
 
 ```text
 artifacts\publish\win-x64\
-artifacts\installer\GpxView-0.1.4-win-x64.msi
+artifacts\installer\GpxView-0.2.0-win-x64.msi
 ```
 
 应用图标如需从可编辑源重新生成：

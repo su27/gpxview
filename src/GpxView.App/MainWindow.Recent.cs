@@ -11,7 +11,6 @@ public partial class MainWindow
     private const string DefaultGeocodingEndpoint = "https://nominatim.openstreetmap.org/reverse";
     private readonly RecentTrackStore recentTrackStore = new();
     private ReverseGeocoder? reverseGeocoder;
-    private string? currentPlaceName;
 
     private void HandleWebReady()
     {
@@ -19,13 +18,11 @@ public partial class MainWindow
         SendTheme();
         SendMapStyle();
         SendTerrainMode();
-        if (currentDocument is not null)
-        {
-            SendToMap(currentDocument, currentStatistics ?? TrackStatisticsCalculator.Calculate(currentDocument));
-            SendCurrentPlaceName();
-        }
+        SendRoadNetworkMode();
+        SendTrackCollection(fit: openTracks.Count > 0);
+        SendCurrentPlaceName();
         SendRecentTracks();
-        SetRecentPanelVisible(currentDocument is null);
+        SetRecentPanelVisible(false);
     }
 
     private void HandleWebCommand(JsonElement message)
@@ -43,6 +40,17 @@ public partial class MainWindow
                 break;
             case "openFile":
                 OnOpenFile(this, new RoutedEventArgs());
+                break;
+            case "selectTrack" when TryReadTrackId(message, out var selectedTrackId):
+                SelectTrack(selectedTrackId);
+                break;
+            case "setTrackVisibility" when TryReadTrackId(message, out var visibleTrackId)
+                                                   && message.TryGetProperty("visible", out var visibleElement)
+                                                   && visibleElement.ValueKind is JsonValueKind.True or JsonValueKind.False:
+                SetTrackVisibility(visibleTrackId, visibleElement.GetBoolean());
+                break;
+            case "closeTrack" when TryReadTrackId(message, out var closedTrackId):
+                CloseTrack(closedTrackId);
                 break;
             case "terrainState" when message.TryGetProperty("enabled", out var enabledElement)
                                      && enabledElement.ValueKind is JsonValueKind.True or JsonValueKind.False:
@@ -81,7 +89,7 @@ public partial class MainWindow
         }
 
         SetRecentPanelVisible(false);
-        await LoadFileAsync(entry.Path);
+        await LoadFilesAsync([entry.Path]);
     }
 
     private RecentTrackEntry RegisterRecentTrack(string path, TrackDocument document, TrackStatistics statistics)
@@ -89,7 +97,6 @@ public partial class MainWindow
         var entry = RecentTrackEntryFactory.Create(path, document, statistics, recentTrackStore.Find(path));
         recentTrackStore.Upsert(entry);
         recentTrackStore.Save();
-        currentPlaceName = entry.PlaceName;
         SendRecentTracks();
         SetRecentPanelVisible(false);
         return entry;
@@ -124,9 +131,10 @@ public partial class MainWindow
             recentTrackStore.Upsert(cachedEntry with { PlaceName = placeName });
             recentTrackStore.Save();
             SendRecentTracks();
+            var openTrack = FindOpenTrackByPath(entry.Path);
+            if (openTrack is not null) openTrack.PlaceName = placeName;
             if (!string.Equals(currentPath, entry.Path, StringComparison.OrdinalIgnoreCase)) return;
-            currentPlaceName = placeName;
-            StatusText.Text = $"{Path.GetFileName(entry.Path)} · {placeName}";
+            UpdateCurrentTrackPresentation();
             SendCurrentPlaceName();
         }
         catch (OperationCanceledException)
@@ -157,10 +165,19 @@ public partial class MainWindow
     {
         if (!webReady || MapView.CoreWebView2 is null) return;
         var options = mapServices.Geocoding ?? new GeocodingOptions();
-        var placeName = currentPlaceName
+        var placeName = CurrentTrack?.PlaceName
                         ?? (!options.Enabled ? "地点识别已关闭" : lookupFailed ? "地点暂不可用" : "正在识别地点…");
         var message = new { Type = "setPlaceName", PlaceName = placeName };
         MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
+    }
+
+    private static bool TryReadTrackId(JsonElement message, out string id)
+    {
+        id = string.Empty;
+        if (!message.TryGetProperty("id", out var idElement) || idElement.ValueKind != JsonValueKind.String)
+            return false;
+        id = idElement.GetString() ?? string.Empty;
+        return id.Length > 0;
     }
 
     private void CloseRecentTrackServices() => reverseGeocoder?.Dispose();

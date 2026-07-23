@@ -20,12 +20,18 @@ public partial class MainWindow : Window
     {
         ".gpx", ".kml", ".kmz", ".fit"
     };
+    private static readonly string[] TrackColors =
+    [
+        "#176BDE", "#D85832", "#168C72", "#A85DB8", "#D18B12", "#5266C7",
+        "#C8426F", "#63862A", "#1F8FA8", "#A86832", "#7656C2", "#C64D45"
+    ];
     private readonly TrackFileLoader loader = new();
     private readonly MapServiceOptions mapServices = LoadMapServiceOptions();
+    private readonly List<OpenTrackState> openTracks = [];
+    private readonly CancellationTokenSource lifetimeCancellation = new();
     private CancellationTokenSource? loadCancellation;
-    private TrackDocument? currentDocument;
-    private TrackStatistics? currentStatistics;
-    private string? currentPath;
+    private string? activeTrackId;
+    private int nextTrackOrdinal;
     private bool webReady;
     private DisplayTheme selectedTheme = DisplayTheme.System;
     private bool effectiveDarkTheme;
@@ -34,6 +40,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitializeRoadNetwork();
         var tiandituEnabled = mapServices.Tianditu is { Tk.Length: > 0, Sk.Length: > 0 };
         for (var index = 3; index <= 5; index++)
         {
@@ -63,10 +70,14 @@ public partial class MainWindow : Window
             var mapServicesJson = JsonSerializer.Serialize(mapServices, JsonOptions);
             await core.AddScriptToExecuteOnDocumentCreatedAsync(
                 $"window.gpxViewMapServices={mapServicesJson};");
+            var roadNetworkJson = JsonSerializer.Serialize(GetRoadNetworkWebConfig(), JsonOptions);
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(
+                $"window.gpxViewRoadNetwork={roadNetworkJson};");
             core.SetVirtualHostNameToFolderMapping(
                 "app.gpxview",
                 Path.Combine(AppContext.BaseDirectory, "Web"),
                 CoreWebView2HostResourceAccessKind.DenyCors);
+            ConfigureRoadNetworkRequests(core);
             core.WebMessageReceived += OnWebMessageReceived;
             core.NavigationStarting += (_, args) =>
             {
@@ -74,8 +85,11 @@ public partial class MainWindow : Window
             };
             MapView.Source = new Uri("https://app.gpxview/index.html");
 
-            var startupPath = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault(IsSupportedTrackFile);
-            if (startupPath is not null) await LoadFileAsync(Path.GetFullPath(startupPath));
+            var startupPaths = Environment.GetCommandLineArgs().Skip(1)
+                .Where(IsSupportedTrackFile)
+                .Select(Path.GetFullPath)
+                .ToArray();
+            if (startupPaths.Length > 0) await LoadFilesAsync(startupPaths);
         }
         catch (Exception exception)
         {
@@ -191,9 +205,10 @@ public partial class MainWindow : Window
         {
             Title = "打开轨迹文件",
             Filter = "轨迹文件 (*.gpx;*.kml;*.kmz;*.fit)|*.gpx;*.kml;*.kmz;*.fit|所有文件 (*.*)|*.*",
-            CheckFileExists = true
+            CheckFileExists = true,
+            Multiselect = true
         };
-        if (dialog.ShowDialog(this) == true) _ = LoadFileAsync(dialog.FileName);
+        if (dialog.ShowDialog(this) == true) _ = LoadFilesAsync(dialog.FileNames);
     }
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
@@ -242,23 +257,23 @@ public partial class MainWindow : Window
 
     private void OnDragOver(object sender, DragEventArgs e)
     {
-        e.Effects = TryGetDroppedFile(e.Data, out _) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Effects = TryGetDroppedFiles(e.Data, out _) ? DragDropEffects.Copy : DragDropEffects.None;
         e.Handled = true;
     }
 
     private void OnDrop(object sender, DragEventArgs e)
     {
         e.Handled = true;
-        if (TryGetDroppedFile(e.Data, out var path)) _ = LoadFileAsync(path);
+        if (TryGetDroppedFiles(e.Data, out var paths)) _ = LoadFilesAsync(paths);
     }
 
-    private static bool TryGetDroppedFile(IDataObject data, out string path)
+    private static bool TryGetDroppedFiles(IDataObject data, out string[] paths)
     {
-        path = string.Empty;
+        paths = [];
         if (!data.GetDataPresent(DataFormats.FileDrop) || data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } files)
             return false;
-        path = files[0];
-        return IsSupportedTrackFile(path);
+        paths = files.Where(IsSupportedTrackFile).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        return paths.Length > 0;
     }
 
     private static bool IsSupportedTrackFile(string path) =>
@@ -266,7 +281,7 @@ public partial class MainWindow : Window
 
     private async void OnCoordinateChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (IsLoaded && currentPath is not null) await LoadFileAsync(currentPath);
+        if (IsLoaded && openTracks.Count > 0) await ReloadOpenTracksAsync();
     }
 
     private void OnMapStyleChanged(object sender, SelectionChangedEventArgs e)
@@ -274,45 +289,125 @@ public partial class MainWindow : Window
         if (IsLoaded) SendMapStyle();
     }
 
-    private async Task LoadFileAsync(string path)
+    private async Task LoadFilesAsync(IEnumerable<string> paths)
+    {
+        var requestedPaths = paths
+            .Where(IsSupportedTrackFile)
+            .Select(Path.GetFullPath)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (requestedPaths.Length == 0) return;
+
+        loadCancellation?.Cancel();
+        loadCancellation?.Dispose();
+        loadCancellation = new CancellationTokenSource();
+        var cancellationToken = loadCancellation.Token;
+        var addedTrack = false;
+        var failures = new List<string>();
+
+        for (var index = 0; index < requestedPaths.Length; index++)
+        {
+            var path = requestedPaths[index];
+            var existing = FindOpenTrackByPath(path);
+            if (existing is not null)
+            {
+                activeTrackId = existing.Id;
+                continue;
+            }
+
+            StatusText.Text = requestedPaths.Length == 1
+                ? $"正在打开 {Path.GetFileName(path)}"
+                : $"正在打开 {index + 1}/{requestedPaths.Length} · {Path.GetFileName(path)}";
+            try
+            {
+                var options = new TrackLoadOptions { SourceCoordinateSystem = GetSelectedCoordinateSystem() };
+                var document = await loader.LoadAsync(path, options, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                var statistics = TrackStatisticsCalculator.Calculate(document);
+                var ordinal = nextTrackOrdinal++;
+                var track = new OpenTrackState(
+                    $"track-{ordinal}", path, AllocateTrackColor(ordinal), document, statistics);
+                var recentEntry = RegisterRecentTrack(path, document, statistics);
+                track.PlaceName = recentEntry.PlaceName;
+                openTracks.Add(track);
+                activeTrackId = track.Id;
+                addedTrack = true;
+                _ = ResolvePlaceNameAsync(recentEntry, lifetimeCancellation.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                UpdateCurrentTrackPresentation();
+                if (addedTrack) SendTrackCollection(fit: true);
+                return;
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
+            {
+                failures.Add($"{Path.GetFileName(path)}：{exception.Message}");
+            }
+            catch (Exception exception)
+            {
+                failures.Add($"{Path.GetFileName(path)}：读取时发生未预期错误（{exception.Message}）");
+            }
+        }
+
+        UpdateCurrentTrackPresentation();
+        if (addedTrack) SendTrackCollection(fit: true);
+        else SendActiveTrack();
+        SendCurrentPlaceName();
+        SetRecentPanelVisible(false);
+
+        if (failures.Count == 0) return;
+        MessageBox.Show(this, string.Join("\n\n", failures), "部分轨迹无法打开",
+            MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private async Task ReloadOpenTracksAsync()
     {
         loadCancellation?.Cancel();
         loadCancellation?.Dispose();
         loadCancellation = new CancellationTokenSource();
         var cancellationToken = loadCancellation.Token;
-        StatusText.Text = $"正在打开 {Path.GetFileName(path)}";
+        var failures = new List<string>();
 
-        try
+        for (var index = 0; index < openTracks.Count; index++)
         {
-            var options = new TrackLoadOptions { SourceCoordinateSystem = GetSelectedCoordinateSystem() };
-            var document = await loader.LoadAsync(path, options, cancellationToken);
-            cancellationToken.ThrowIfCancellationRequested();
-            currentPath = path;
-            currentDocument = document;
-            var statistics = TrackStatisticsCalculator.Calculate(document);
-            currentStatistics = statistics;
-            var recentEntry = RegisterRecentTrack(path, document, statistics);
-            SendToMap(document, statistics);
-            SendCurrentPlaceName();
-            Title = $"{document.Name} — GpxView";
-            StatusText.Text = Path.GetFileName(path);
-            StatusSummaryText.Text = BuildStatusSummary(document, statistics);
-            StatusSummaryText.Visibility = Visibility.Visible;
-            _ = ResolvePlaceNameAsync(recentEntry, cancellationToken);
+            var track = openTracks[index];
+            StatusText.Text = $"正在重新解析 {index + 1}/{openTracks.Count} · {Path.GetFileName(track.Path)}";
+            try
+            {
+                var options = new TrackLoadOptions { SourceCoordinateSystem = GetSelectedCoordinateSystem() };
+                var document = await loader.LoadAsync(track.Path, options, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                var statistics = TrackStatisticsCalculator.Calculate(document);
+                track.Document = document;
+                track.Statistics = statistics;
+                var recentEntry = RegisterRecentTrack(track.Path, document, statistics);
+                track.PlaceName = recentEntry.PlaceName;
+                _ = ResolvePlaceNameAsync(recentEntry, lifetimeCancellation.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                UpdateCurrentTrackPresentation();
+                SendTrackCollection(fit: false);
+                return;
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
+            {
+                failures.Add($"{Path.GetFileName(track.Path)}：{exception.Message}");
+            }
+            catch (Exception exception)
+            {
+                failures.Add($"{Path.GetFileName(track.Path)}：重新解析时发生未预期错误（{exception.Message}）");
+            }
         }
-        catch (OperationCanceledException)
+
+        UpdateCurrentTrackPresentation();
+        SendTrackCollection(fit: false);
+        SendCurrentPlaceName();
+        if (failures.Count > 0)
         {
-            return;
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
-        {
-            StatusText.Text = "文件打开失败";
-            MessageBox.Show(this, exception.Message, "无法打开轨迹", MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-        catch (Exception exception)
-        {
-            StatusText.Text = "发生未预期的错误";
-            MessageBox.Show(this, $"读取轨迹时发生错误：\n{exception.Message}", "GpxView", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(this, string.Join("\n\n", failures), "部分轨迹无法重新解析",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -369,17 +464,123 @@ public partial class MainWindow : Window
         if (!string.IsNullOrWhiteSpace(error)) StatusText.Text = error;
     }
 
-    private void SendToMap(TrackDocument document, TrackStatistics statistics)
+    private OpenTrackState? CurrentTrack => activeTrackId is null
+        ? null
+        : openTracks.FirstOrDefault(track => track.Id == activeTrackId);
+
+    private string? currentPath => CurrentTrack?.Path;
+
+    private OpenTrackState? FindOpenTrack(string id) =>
+        openTracks.FirstOrDefault(track => track.Id == id);
+
+    private OpenTrackState? FindOpenTrackByPath(string path) =>
+        openTracks.FirstOrDefault(track => string.Equals(track.Path, path, StringComparison.OrdinalIgnoreCase));
+
+    private string AllocateTrackColor(int ordinal)
     {
-        if (!webReady || MapView.CoreWebView2 is null) return;
-        var payload = BuildWebPayload(document, statistics);
-        MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(payload, JsonOptions));
+        var available = TrackColors.FirstOrDefault(color =>
+            openTracks.All(track => !string.Equals(track.Color, color, StringComparison.OrdinalIgnoreCase)));
+        if (available is not null) return available;
+        var hue = (ordinal * 137.508 + 212) % 360;
+        return $"hsl({hue:F0}, 68%, 46%)";
     }
 
-    private static WebPayload BuildWebPayload(TrackDocument document, TrackStatistics statistics)
+    private void SendTrackCollection(bool fit)
+    {
+        if (!webReady || MapView.CoreWebView2 is null) return;
+        var message = new
+        {
+            Type = "setTracks",
+            Tracks = openTracks.Select(BuildWebTrackPayload).ToArray(),
+            ActiveTrackId = activeTrackId,
+            Fit = fit
+        };
+        MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
+    }
+
+    private void SendActiveTrack()
+    {
+        if (!webReady || MapView.CoreWebView2 is null) return;
+        var message = new { Type = "setActiveTrack", Id = activeTrackId };
+        MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
+    }
+
+    private void SendTrackVisibility(OpenTrackState track)
+    {
+        if (!webReady || MapView.CoreWebView2 is null) return;
+        var message = new { Type = "setTrackVisibility", track.Id, track.Visible };
+        MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
+    }
+
+    private void SendRemovedTrack(string id)
+    {
+        if (!webReady || MapView.CoreWebView2 is null) return;
+        var message = new { Type = "removeTrack", Id = id, ActiveTrackId = activeTrackId };
+        MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
+    }
+
+    private void SelectTrack(string id)
+    {
+        var track = FindOpenTrack(id);
+        if (track is null) return;
+        activeTrackId = track.Id;
+        UpdateCurrentTrackPresentation();
+        SendActiveTrack();
+        SendCurrentPlaceName();
+    }
+
+    private void SetTrackVisibility(string id, bool visible)
+    {
+        var track = FindOpenTrack(id);
+        if (track is null || track.Visible == visible) return;
+        track.Visible = visible;
+        SendTrackVisibility(track);
+    }
+
+    private void CloseTrack(string id)
+    {
+        var index = openTracks.FindIndex(track => track.Id == id);
+        if (index < 0) return;
+        var wasActive = activeTrackId == id;
+        openTracks.RemoveAt(index);
+        if (wasActive)
+        {
+            activeTrackId = openTracks.Count == 0
+                ? null
+                : openTracks[Math.Min(index, openTracks.Count - 1)].Id;
+        }
+        UpdateCurrentTrackPresentation();
+        SendRemovedTrack(id);
+        SendCurrentPlaceName();
+        SetRecentPanelVisible(false);
+    }
+
+    private void UpdateCurrentTrackPresentation()
+    {
+        var track = CurrentTrack;
+        if (track is null)
+        {
+            Title = "GpxView";
+            StatusText.Text = "就绪";
+            StatusSummaryText.Text = string.Empty;
+            StatusSummaryText.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        Title = $"{track.Document.Name} — GpxView";
+        StatusText.Text = track.PlaceName is { Length: > 0 } placeName
+            ? $"{Path.GetFileName(track.Path)} · {placeName}"
+            : Path.GetFileName(track.Path);
+        StatusSummaryText.Text = BuildStatusSummary(track.Document, track.Statistics);
+        StatusSummaryText.Visibility = Visibility.Visible;
+    }
+
+    private static WebTrackPayload BuildWebTrackPayload(OpenTrackState track)
     {
         const int maximumMapPoints = 30_000;
         const int maximumProfilePoints = 8_000;
+        var document = track.Document;
+        var statistics = track.Statistics;
         var mapStride = Math.Max(1, (int)Math.Ceiling(document.PointCount / (double)maximumMapPoints));
         var profileCandidates = new List<WebPoint>(Math.Min(document.PointCount, maximumProfilePoints * 2));
         var segments = new List<WebSegment>();
@@ -431,7 +632,8 @@ public partial class MainWindow : Window
             || index == profileCandidates.Count - 1
             || index > 0 && profileCandidates[index - 1].SegmentIndex != point.SegmentIndex
             || index + 1 < profileCandidates.Count && profileCandidates[index + 1].SegmentIndex != point.SegmentIndex).ToArray();
-        return new WebPayload("loadTrack", document.Name, segments, profile, BuildWebSummary(document, statistics));
+        return new WebTrackPayload(track.Id, document.Name, Path.GetFileName(track.Path), track.Color,
+            track.Visible, track.PlaceName, segments, profile, BuildWebSummary(document, statistics));
     }
 
     private static WebSummary BuildWebSummary(TrackDocument document, TrackStatistics statistics)
@@ -490,8 +692,11 @@ public partial class MainWindow : Window
     private void OnClosing(object? sender, CancelEventArgs e)
     {
         SystemEvents.UserPreferenceChanged -= OnSystemPreferenceChanged;
+        lifetimeCancellation.Cancel();
+        lifetimeCancellation.Dispose();
         loadCancellation?.Cancel();
         loadCancellation?.Dispose();
+        CloseRoadNetworkServices();
         CloseRecentTrackServices();
     }
 
@@ -520,8 +725,24 @@ public partial class MainWindow : Window
         public string Endpoint { get; init; } = DefaultGeocodingEndpoint;
     }
 
-    private sealed record WebPayload(string Type, string Name, IReadOnlyList<WebSegment> Segments,
-        IReadOnlyList<WebPoint> Profile, WebSummary Summary);
+    private sealed class OpenTrackState(
+        string id,
+        string path,
+        string color,
+        TrackDocument document,
+        TrackStatistics statistics)
+    {
+        public string Id { get; } = id;
+        public string Path { get; } = path;
+        public string Color { get; } = color;
+        public TrackDocument Document { get; set; } = document;
+        public TrackStatistics Statistics { get; set; } = statistics;
+        public bool Visible { get; set; } = true;
+        public string? PlaceName { get; set; }
+    }
+
+    private sealed record WebTrackPayload(string Id, string Name, string FileName, string Color, bool Visible,
+        string? PlaceName, IReadOnlyList<WebSegment> Segments, IReadOnlyList<WebPoint> Profile, WebSummary Summary);
     private sealed record WebSummary(string FormatLine, string Distance, string? Duration, string? Elevation,
         string? Speed, string? HeartRate, string? CadencePower);
     private sealed record WebSegment(IReadOnlyList<double[]> Coordinates);

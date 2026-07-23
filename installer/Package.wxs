@@ -1,7 +1,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package Name="GpxView"
            Manufacturer="su27"
-           Version="0.1.4"
+           Version="0.2.0"
            UpgradeCode="{1DB8158B-D4FD-4AE8-AB5B-4B7A77D1EC92}"
            Scope="perMachine"
            InstallerVersion="500"
