@@ -15,6 +15,7 @@ namespace GpxView.App;
 
 public partial class MainWindow : Window
 {
+    private const int WebProtocolVersion = 1;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -75,6 +76,7 @@ public partial class MainWindow : Window
                 if (!args.Uri.StartsWith("https://app.gpxview/", StringComparison.OrdinalIgnoreCase)) args.Cancel = true;
             };
             MapView.Source = new Uri("https://app.gpxview/index.html");
+            _ = RefreshRemoteRoadNetworkAsync();
 
             var startupPaths = Environment.GetCommandLineArgs().Skip(1)
                 .Where(IsSupportedTrackFile)
@@ -95,8 +97,7 @@ public partial class MainWindow : Window
         try
         {
             using var message = JsonDocument.Parse(e.WebMessageAsJson);
-            if (message.RootElement.ValueKind == JsonValueKind.String
-                && message.RootElement.GetString() == "ready")
+            if (IsWebReadyMessage(message.RootElement))
             {
                 HandleWebReady();
                 return;
@@ -107,6 +108,20 @@ public partial class MainWindow : Window
         {
             // Ignore malformed or unsupported messages from the local map page.
         }
+    }
+
+    private static bool IsWebReadyMessage(JsonElement message)
+    {
+        if (message.ValueKind == JsonValueKind.String)
+            return message.GetString() == "ready";
+        if (message.ValueKind != JsonValueKind.Object
+            || !message.TryGetProperty("type", out var type)
+            || type.ValueKind != JsonValueKind.String
+            || type.GetString() != "ready") return false;
+        return !message.TryGetProperty("protocolVersion", out var version)
+               || version.ValueKind == JsonValueKind.Number
+               && version.TryGetInt32(out var value)
+               && value == WebProtocolVersion;
     }
 
     private void OnThemeToggle(object sender, RoutedEventArgs e)

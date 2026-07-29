@@ -146,6 +146,7 @@ public partial class MainWindow
             GeocodingConsentPending = IsGeocodingAvailable && appSettings.GeocodingEnabled is null,
             BuildInfo.Version,
             BuildInfo.Channel,
+            FileAssociations = FileAssociationManager.GetStatuses(),
             RoadNetworks = BuildRoadNetworkSettingsPayload()
         };
         MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
@@ -159,6 +160,22 @@ public partial class MainWindow
         localization = LocalizationCatalog.Create(language);
         ResetReverseGeocoder();
         ApplyLocalization();
+    }
+
+    private void AssociateFileType(string extension)
+    {
+        var result = FileAssociationManager.Associate(extension);
+        SendSettingsState();
+        StatusText.Text = result.Status switch
+        {
+            FileAssociationUpdateStatus.Associated => TF(
+                "Status.FileAssociationUpdated",
+                result.Extension.ToUpperInvariant()),
+            FileAssociationUpdateStatus.NeedsSystemConfirmation => TF(
+                "Status.FileAssociationNeedsConfirmation",
+                result.Extension.ToUpperInvariant()),
+            _ => TF("Status.FileAssociationFailed", result.Extension.ToUpperInvariant())
+        };
     }
 
     private void OpenDefaultAppsSettings()

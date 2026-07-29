@@ -11,3 +11,7 @@ __pycache__/
 *.py[cod]
 
 src/GpxView.App/MapServices.local.json
+
+**/node_modules/
+**/.private-runtime/
+**/.dev.vars

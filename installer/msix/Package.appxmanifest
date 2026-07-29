@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="SuDan.GpxView"
+    Publisher="CN=DBB8CB7C-AA92-4365-B28B-709FB95AB14B"
+    Version="0.2.1.0"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>GpxView</DisplayName>
+    <PublisherDisplayName>Su Dan</PublisherDisplayName>
+    <Description>Fast, lightweight GPX, KML, KMZ and FIT track viewer.</Description>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Resources>
+    <Resource Language="zh-CN" />
+    <Resource Language="en-US" />
+  </Resources>
+
+  <Dependencies>
+    <TargetDeviceFamily
+      Name="Windows.Desktop"
+      MinVersion="10.0.17763.0"
+      MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Applications>
+    <Application
+      Id="GpxView"
+      Executable="GpxView.exe"
+      EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="GpxView"
+        Description="Fast, lightweight track viewer"
+        BackgroundColor="transparent"
+        Square44x44Logo="Assets\Square44x44Logo.png"
+        Square150x150Logo="Assets\Square150x150Logo.png" />
+      <Extensions>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="gpxview.track">
+            <uap:DisplayName>GpxView track files</uap:DisplayName>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.gpx</uap:FileType>
+              <uap:FileType>.kml</uap:FileType>
+              <uap:FileType>.kmz</uap:FileType>
+              <uap:FileType>.fit</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

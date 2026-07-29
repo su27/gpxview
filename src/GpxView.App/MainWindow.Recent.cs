@@ -62,12 +62,26 @@ public partial class MainWindow
             case "openDefaultAppsSettings":
                 OpenDefaultAppsSettings();
                 break;
+            case "associateFileType" when TryReadString(message, "extension", out var extension):
+                AssociateFileType(extension);
+                break;
             case "openRoadNetworkFolder":
                 OpenRoadNetworkFolder();
                 break;
             case "refreshRoadNetworks":
                 RefreshRoadNetworkArchives();
                 SendSettingsState();
+                break;
+            case "connectRoadNetworkService"
+                when TryReadString(message, "endpoint", out var endpoint)
+                     && TryReadString(message, "enrollmentCode", out var enrollmentCode):
+                _ = ConnectRoadNetworkServiceAsync(endpoint, enrollmentCode);
+                break;
+            case "disconnectRoadNetworkService":
+                _ = DisconnectRoadNetworkServiceAsync();
+                break;
+            case "refreshOnlineRoadNetworks":
+                _ = RefreshRemoteRoadNetworkAsync();
                 break;
             case "openProjectHome":
                 OpenProjectHome();

@@ -21,7 +21,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 - 可选的轨迹地点识别默认关闭，首次使用前明确询问；只发送轨迹文件中的一个低精度代表坐标，不读取设备当前位置
 - 最近轨迹面板缓存文件名、统计、地名、轨迹缩略图和海拔缩略图，启动时无需重新解析原文件
 - 中英文界面可跟随系统或手动切换；单图标切换跟随系统、浅色和深色主题，WPF、地图覆盖层与图表同步
-- 设置面板集中管理语言、地点识别、Windows 文件关联、本地路网目录与清单、版本渠道、隐私政策和第三方许可
+- 设置面板集中管理语言、地点识别、Windows 文件关联、版本渠道、隐私政策和第三方许可；仅在检测到本地 PMTiles 时显示路网文件清单
 - 轨迹可按统一颜色、海拔、坡度、速度、心率或功率动态着色
 - 可按原始时间戳或距离回放轨迹，支持变速、暂停、拖动定位、地图跟随和海拔图同步
 - 海拔作为基础曲线，可按数据存在情况叠加心率、速度和功率；悬停数值与地图位置联动
@@ -39,10 +39,10 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 构建出的 64 位 MSI 位于：
 
 ```text
-artifacts\installer\GpxView-0.2.0-win-x64.msi
+artifacts\installer\GpxView-0.2.1-win-x64.msi
 ```
 
-安装器将 GpxView 安装到 Program Files，创建开始菜单入口，并向 Windows 注册 GPX、KML、KMZ、FIT 的可选打开方式和“默认应用”能力；它不会抢占现有默认程序，也不创建桌面快捷方式。用户可在应用设置中打开 Windows“默认应用”页面自行选择。安装包包含 .NET 10 桌面运行时，终端用户无需另行安装 .NET。现代 Windows 通常已包含 Microsoft Edge WebView2 Runtime；若该组件缺失，应用会显示修复提示。
+安装器将 GpxView 安装到 Program Files，创建开始菜单入口，并向 Windows 注册 GPX、KML、KMZ、FIT 的可选打开方式和“默认应用”能力；它不会在安装时抢占现有默认程序，也不创建桌面快捷方式。GitHub 版可在应用设置中为这些格式设为 GpxView；若 Windows 已用受保护的默认应用记录锁定其他程序，设置面板会改为打开系统确认入口。安装包包含 .NET 10 桌面运行时，终端用户无需另行安装 .NET。现代 Windows 通常已包含 Microsoft Edge WebView2 Runtime；若该组件缺失，应用会显示修复提示。
 
 ## 技术栈
 
@@ -66,6 +66,8 @@ dotnet run --project src\GpxView.App\GpxView.App.csproj
 ```
 
 仓库通过 `global.json` 固定使用 .NET SDK 10.0.302。MapLibre 与 maplibre-contour 的 JS、CSS 和许可证固定保存在 `src\GpxView.App\Web\vendor` 对应版本目录，应用运行时不依赖 unpkg 等前端 CDN。maplibre-contour 使用 BSD 3-Clause 许可证。
+
+MapLibre 页面通过平台中立的 `gpxHost` 桥与原生宿主通信；消息方向、字段和现存的可移植性边界记录在 [`docs/HOST_PROTOCOL.md`](docs/HOST_PROTOCOL.md)。WebView2 专有调用只保留在桥接适配器中，为以后接入 WKWebView 等宿主预留边界。
 
 ## 地图服务配置
 
@@ -164,9 +166,29 @@ Store 发布目录是与商店包身份解耦的应用载荷。若 Partner Cente
 dotnet build installer\GpxView.Store.Installer.wixproj -c Release
 ```
 
-输出为 `artifacts\installer\GpxView-0.2.0-store-win-x64.msi`。该项目会在构建时再次拒绝任何包含 `MapServices.local.json` 的 Store 载荷。
+输出为 `artifacts\installer\GpxView-0.2.1-store-win-x64.msi`。该项目会在构建时再次拒绝任何包含 `MapServices.local.json` 的 Store 载荷。
 
-如果选择 MSIX 流程，则在 Partner Center 中预留产品后，再用分配的 Identity、Publisher 和签名信息包装同一 Store 载荷；不要在仓库中伪造 Publisher identity。
+Microsoft Store 中已预留正式产品 `GpxView`，其公开包身份如下：
+
+| 字段 | 值 |
+| --- | --- |
+| Store ID | `9NXNTF9Q29R2` |
+| `Package/Identity/Name` | `SuDan.GpxView` |
+| `Package/Identity/Publisher` | `CN=DBB8CB7C-AA92-4365-B28B-709FB95AB14B` |
+| `PublisherDisplayName` | `Su Dan` |
+| Package Family Name | `SuDan.GpxView_5de2zzw6ecnz2` |
+
+正式 MSIX 清单位于 `installer/msix/Package.appxmanifest`。它将 GPX、KML、KMZ 和 FIT 注册为可打开的文件类型，但不会把 GpxView 强制设为系统默认应用；Store 版设置面板会提供这些格式的状态和 Windows 要求的确认入口。构建上传包：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Build-StoreMsix.ps1
+```
+
+输出为 `artifacts\store\GpxView-<四段版本>-win-x64.msix`。脚本会重新发布 `win-x64-store` 载荷、使用 Partner Center 身份生成 MSIX、验证包内身份和架构，并拒绝任何包含 `MapServices.local.json` 的产物。Store 上传包按 Microsoft 的流程保持未签名；Microsoft Store 会在提交后签名。只有绕过商店进行本机侧载时，才需要另行创建并信任 Publisher 匹配的开发证书，证书和密码不得提交到仓库。详见 Microsoft 的 [Store 签名说明](https://learn.microsoft.com/windows/msix/package/sign-msix-package-guide#production-microsoft-store-distribution)。
+
+`src\GpxView.App\Assets\Store\AppTileIcon300.png` 是商店列表建议上传的 300 x 300 应用图标；其余 Store 图标由清单引用并打入 MSIX。商店列表至少需要一张 1366 x 768 或更大的 PNG 桌面截图，README 中现有的三张界面图满足像素尺寸要求，但正式提交前仍应确认它们与当前版本一致。
+
+产品公开地址为 <https://apps.microsoft.com/detail/9NXNTF9Q29R2>；在首次通过认证前，该页面可能不会向普通访客显示。
 
 GitHub MSI 使用 GitHub 渠道的发布目录：
 
@@ -174,7 +196,7 @@ GitHub MSI 使用 GitHub 渠道的发布目录：
 dotnet build installer\GpxView.Installer.wixproj -c Release
 ```
 
-输出为 `artifacts\installer\GpxView-0.2.0-win-x64.msi`。
+输出为 `artifacts\installer\GpxView-0.2.1-win-x64.msi`。
 
 应用图标如需从可编辑源重新生成：
 

@@ -11,6 +11,13 @@ using var master = DrawMaster(1024);
 using var preview = Resize(master, 256);
 preview.Save(Path.Combine(outputDirectory, "GpxView.png"), ImageFormat.Png);
 
+var storeAssetsDirectory = Path.Combine(outputDirectory, "Store");
+Directory.CreateDirectory(storeAssetsDirectory);
+WritePng(master, 44, Path.Combine(storeAssetsDirectory, "Square44x44Logo.png"));
+WritePng(master, 150, Path.Combine(storeAssetsDirectory, "Square150x150Logo.png"));
+WritePng(master, 50, Path.Combine(storeAssetsDirectory, "StoreLogo.png"));
+WritePng(master, 300, Path.Combine(storeAssetsDirectory, "AppTileIcon300.png"));
+
 var sizes = new[] { 16, 20, 24, 32, 40, 48, 64, 128, 256 };
 var frames = sizes.Select(size =>
 {
@@ -20,7 +27,13 @@ var frames = sizes.Select(size =>
     return (Size: size, Data: stream.ToArray());
 }).ToArray();
 WriteIco(Path.Combine(outputDirectory, "GpxView.ico"), frames);
-Console.WriteLine($"Generated GpxView.png and GpxView.ico in {outputDirectory}");
+Console.WriteLine($"Generated app and Store assets in {outputDirectory}");
+
+static void WritePng(Image source, int size, string path)
+{
+    using var bitmap = Resize(source, size);
+    bitmap.Save(path, ImageFormat.Png);
+}
 
 static Bitmap DrawMaster(int size)
 {

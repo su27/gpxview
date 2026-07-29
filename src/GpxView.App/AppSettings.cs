@@ -8,6 +8,10 @@ internal sealed record AppSettings
     public int Version { get; init; } = 1;
     public string Language { get; init; } = "system";
     public bool? GeocodingEnabled { get; init; }
+    public string RoadNetworkServiceEndpoint { get; init; } = string.Empty;
+    public string RoadNetworkAccountId { get; init; } = string.Empty;
+    public string RoadNetworkDisplayName { get; init; } = string.Empty;
+    public string RoadNetworkDeviceId { get; init; } = string.Empty;
 }
 
 internal sealed class AppSettingsStore
@@ -48,6 +52,10 @@ internal sealed class AppSettingsStore
 
     private static AppSettings Normalize(AppSettings settings) => settings with
     {
-        Language = settings.Language is "zh-CN" or "en-US" ? settings.Language : "system"
+        Language = settings.Language is "zh-CN" or "en-US" ? settings.Language : "system",
+        RoadNetworkServiceEndpoint = settings.RoadNetworkServiceEndpoint.Trim(),
+        RoadNetworkAccountId = settings.RoadNetworkAccountId.Trim(),
+        RoadNetworkDisplayName = settings.RoadNetworkDisplayName.Trim(),
+        RoadNetworkDeviceId = settings.RoadNetworkDeviceId.Trim()
     };
 }
