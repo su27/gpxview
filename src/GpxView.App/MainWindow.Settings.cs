@@ -147,7 +147,8 @@ public partial class MainWindow
             BuildInfo.Version,
             BuildInfo.Channel,
             FileAssociations = FileAssociationManager.GetStatuses(),
-            RoadNetworks = BuildRoadNetworkSettingsPayload()
+            RoadNetworks = BuildRoadNetworkSettingsPayload(),
+            RoadNetworkCache = BuildRoadNetworkCacheSettingsPayload()
         };
         MapView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOptions));
     }

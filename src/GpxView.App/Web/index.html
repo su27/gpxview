@@ -93,17 +93,28 @@
         <div id="fileAssociationList" class="associationList"></div>
       </section>
       <section id="roadNetworkSettingsSection" class="settingsSection" hidden>
-        <h3 data-i18n="Settings.RoadNetworks">本地路网</h3>
-        <div class="settingRow">
-          <span class="settingCopy">
-            <span class="settingDescription" data-i18n="Settings.RoadNetworkDescription">GpxView 扫描此目录顶层的 PMTiles 文件。</span>
-          </span>
+        <h3 data-i18n="Settings.RoadNetworks">路网</h3>
+        <div id="roadNetworkLocalBlock" hidden>
+          <div class="settingRow">
+            <span class="settingCopy">
+              <span class="settingDescription" data-i18n="Settings.RoadNetworkDescription">GpxView 扫描此目录顶层的 PMTiles 文件。</span>
+            </span>
+          </div>
+          <div class="roadActions">
+            <button id="roadFolderButton" class="settingsAction primary" type="button" data-i18n="Settings.OpenRoadFolder">打开路网目录</button>
+            <button id="roadRefreshButton" class="settingsAction" type="button" data-i18n="Settings.RefreshRoadNetworks">刷新</button>
+          </div>
+          <div id="roadNetworkList"></div>
         </div>
-        <div class="roadActions">
-          <button id="roadFolderButton" class="settingsAction primary" type="button" data-i18n="Settings.OpenRoadFolder">打开路网目录</button>
-          <button id="roadRefreshButton" class="settingsAction" type="button" data-i18n="Settings.RefreshRoadNetworks">刷新</button>
+        <div id="roadNetworkCacheBlock" hidden>
+          <div class="settingRow">
+            <span class="settingCopy">
+              <span class="settingLabel" data-i18n="Settings.RoadNetworkCache">远程路网缓存</span>
+              <span id="roadNetworkCacheDescription" class="settingDescription"></span>
+            </span>
+            <button id="roadCacheClearButton" class="settingsAction" type="button" data-i18n="Settings.ClearRoadNetworkCache">清理缓存</button>
+          </div>
         </div>
-        <div id="roadNetworkList"></div>
       </section>
       <section class="settingsSection">
         <h3 data-i18n="Settings.About">关于</h3>
@@ -301,9 +312,9 @@
   let activeTrackId=null,profile=[],styleReady=false,styleMode=openFreeMapId,activeBaseMap=openFreeMapId,darkTheme=false,availableSeries={},availableTrackColors={},trackColorMode='uniform';
   let terrainEnabled=false,terrainResourcesPromise=null,contourDemSource=null,terrainAnimateOnReady=false,styleGeneration=0,roadNetworkEnabled=roadNetworkAvailable&&roadNetworkConfig.enabled!==false,roadNetworkInitialFit=false;
   let trackData=featureCollection([]),trackColorData=featureCollection([]),endData=featureCollection([]),hoverData=featureCollection([]),playbackData=featureCollection([]),pendingFit=false,trackHasChartData=false;
-  let currentRecentEntries=[],settingsState={language:'system',resolvedLocale:'zh-CN',geocodingAvailable:true,geocodingEnabled:false,geocodingConsentPending:false,version:'',channel:'GitHub',fileAssociations:[],roadNetworks:[]};
+  let currentRecentEntries=[],settingsState={language:'system',resolvedLocale:'zh-CN',geocodingAvailable:true,geocodingEnabled:false,geocodingConsentPending:false,version:'',channel:'GitHub',fileAssociations:[],roadNetworks:[],roadNetworkCache:{visible:false,bytes:0,entries:0,busy:false}};
   const playback={axis:[],usesTime:false,total:0,position:0,playing:false,maximumDuration:120,follow:false,frameId:0,startTimestamp:0,startPosition:0,currentIndex:-1,lastFollowTimestamp:0};
-  const canvas=document.getElementById('chart'),meta=document.getElementById('chartMeta'),chartPanel=document.getElementById('chartPanel'),summaryPanel=document.getElementById('summaryPanel'),summaryMetrics=document.getElementById('summaryMetrics'),elevationLegend=document.getElementById('elevationLegend'),detailsToggle=document.getElementById('detailsToggle'),recentPanel=document.getElementById('recentPanel'),recentScrim=document.getElementById('recentScrim'),recentList=document.getElementById('recentList'),trackTabs=document.getElementById('trackTabs'),trackColorSelect=document.getElementById('trackColorSelect'),trackColorLegend=document.getElementById('trackColorLegend'),playbackBar=document.getElementById('playbackBar'),playbackToggle=document.getElementById('playbackToggle'),playbackRange=document.getElementById('playbackRange'),playbackPosition=document.getElementById('playbackPosition'),playbackSpeed=document.getElementById('playbackSpeed'),playbackFollow=document.getElementById('playbackFollow'),terrainReadout=document.getElementById('terrainReadout'),settingsPanel=document.getElementById('settingsPanel'),settingsScrim=document.getElementById('settingsScrim'),settingsLanguage=document.getElementById('settingsLanguage'),geocodingToggle=document.getElementById('geocodingToggle'),fileAssociationList=document.getElementById('fileAssociationList'),roadNetworkSettingsSection=document.getElementById('roadNetworkSettingsSection'),roadNetworkList=document.getElementById('roadNetworkList'),documentPanel=document.getElementById('documentPanel'),documentScrim=document.getElementById('documentScrim'),documentContent=document.getElementById('documentContent'),consentPanel=document.getElementById('consentPanel'),consentScrim=document.getElementById('consentScrim');
+  const canvas=document.getElementById('chart'),meta=document.getElementById('chartMeta'),chartPanel=document.getElementById('chartPanel'),summaryPanel=document.getElementById('summaryPanel'),summaryMetrics=document.getElementById('summaryMetrics'),elevationLegend=document.getElementById('elevationLegend'),detailsToggle=document.getElementById('detailsToggle'),recentPanel=document.getElementById('recentPanel'),recentScrim=document.getElementById('recentScrim'),recentList=document.getElementById('recentList'),trackTabs=document.getElementById('trackTabs'),trackColorSelect=document.getElementById('trackColorSelect'),trackColorLegend=document.getElementById('trackColorLegend'),playbackBar=document.getElementById('playbackBar'),playbackToggle=document.getElementById('playbackToggle'),playbackRange=document.getElementById('playbackRange'),playbackPosition=document.getElementById('playbackPosition'),playbackSpeed=document.getElementById('playbackSpeed'),playbackFollow=document.getElementById('playbackFollow'),terrainReadout=document.getElementById('terrainReadout'),settingsPanel=document.getElementById('settingsPanel'),settingsScrim=document.getElementById('settingsScrim'),settingsLanguage=document.getElementById('settingsLanguage'),geocodingToggle=document.getElementById('geocodingToggle'),fileAssociationList=document.getElementById('fileAssociationList'),roadNetworkSettingsSection=document.getElementById('roadNetworkSettingsSection'),roadNetworkLocalBlock=document.getElementById('roadNetworkLocalBlock'),roadNetworkList=document.getElementById('roadNetworkList'),roadNetworkCacheBlock=document.getElementById('roadNetworkCacheBlock'),roadNetworkCacheDescription=document.getElementById('roadNetworkCacheDescription'),roadCacheClearButton=document.getElementById('roadCacheClearButton'),documentPanel=document.getElementById('documentPanel'),documentScrim=document.getElementById('documentScrim'),documentContent=document.getElementById('documentContent'),consentPanel=document.getElementById('consentPanel'),consentScrim=document.getElementById('consentScrim');
   const mapCanvasContainer=map.getCanvasContainer();
   let shiftDragState=null;
   function finishShiftDrag(event){
@@ -349,6 +360,7 @@
   fileAssociationList.addEventListener('click',event=>{const button=event.target instanceof Element?event.target.closest('button[data-extension]'):null;if(!button)return;postHostMessage({type:button.dataset.system==='true'?'openDefaultAppsSettings':'associateFileType',extension:button.dataset.extension})});
   document.getElementById('roadFolderButton').addEventListener('click',()=>postHostMessage({type:'openRoadNetworkFolder'}));
   document.getElementById('roadRefreshButton').addEventListener('click',()=>postHostMessage({type:'refreshRoadNetworks'}));
+  roadCacheClearButton.addEventListener('click',()=>postHostMessage({type:'clearRoadNetworkCache'}));
   document.getElementById('projectHomeButton').addEventListener('click',()=>postHostMessage({type:'openProjectHome'}));
   document.getElementById('privacyButton').addEventListener('click',()=>openLegalDocument('privacy'));
   document.getElementById('thirdPartyButton').addEventListener('click',()=>openLegalDocument('third-party'));
@@ -372,16 +384,17 @@
     const generation=++styleGeneration;
     styleReady=false;
     if(roadNetworkAvailable){
-      const firstSymbol=map.getStyle().layers.find(layer=>layer.type==='symbol')?.id;
       roadNetworkArchives.forEach((archive,index)=>{
         const sourceId=roadNetworkSourceId(index),layerId=roadNetworkLayerId(index);
         map.addSource(sourceId,{type:'raster',url:`pmtiles://${archive.url}`,tileSize:archive.tileSize||256,minzoom:archive.minZoom,maxzoom:archive.maxZoom,attribution:t('Web.RoadAttribution')});
-        map.addLayer({id:layerId,type:'raster',source:sourceId,minzoom:archive.minZoom||11,maxzoom:(archive.maxZoom||16)+1,layout:{visibility:roadNetworkEnabled?'visible':'none'},paint:{'raster-opacity':.92,'raster-fade-duration':0,'raster-resampling':'linear'}},firstSymbol)
+        map.addLayer({id:layerId,type:'raster',source:sourceId,minzoom:archive.minZoom||11,maxzoom:(archive.maxZoom||16)+1,layout:{visibility:roadNetworkEnabled?'visible':'none'},paint:{'raster-opacity':.92,'raster-fade-duration':0,'raster-resampling':'linear'}})
       })
     }
     map.addSource('gpxview-tracks',{type:'geojson',data:featureCollection([])});
-    map.addLayer({id:'gpxview-track-shadow',type:'line',source:'gpxview-tracks',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#fff','line-width':['case',['boolean',['get','active'],false],7,5.5],'line-opacity':['case',['boolean',['get','active'],false],.9,.68]}});
-    map.addLayer({id:'gpxview-track-base',type:'line',source:'gpxview-tracks',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['case',['boolean',['get','active'],false],4.5,3.2],'line-opacity':['case',['boolean',['get','active'],false],1,.82]}});
+    map.addLayer({id:'gpxview-track-shadow',type:'line',source:'gpxview-tracks',filter:['!=',['get','active'],true],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#fff','line-width':5.5,'line-opacity':.68}});
+    map.addLayer({id:'gpxview-track-base',type:'line',source:'gpxview-tracks',filter:['!=',['get','active'],true],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':3.2,'line-opacity':.82}});
+    map.addLayer({id:'gpxview-track-active-shadow',type:'line',source:'gpxview-tracks',filter:['==',['get','active'],true],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#fff','line-width':7,'line-opacity':.9}});
+    map.addLayer({id:'gpxview-track-active-base',type:'line',source:'gpxview-tracks',filter:['==',['get','active'],true],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':4.5,'line-opacity':1}});
     map.addSource('gpxview-track-colors',{type:'geojson',data:featureCollection([])});
     map.addLayer({id:'gpxview-track',type:'line',source:'gpxview-track-colors',layout:{'line-cap':'square','line-join':'round'},paint:{'line-color':'#176bde','line-width':4.5}});
     map.addSource('gpxview-ends',{type:'geojson',data:featureCollection([])});
@@ -392,6 +405,7 @@
     map.addLayer({id:'gpxview-playback-halo',type:'circle',source:'gpxview-playback',paint:{'circle-radius':12,'circle-color':'#ff3158','circle-opacity':.22}});
     map.addLayer({id:'gpxview-playback',type:'circle',source:'gpxview-playback',paint:{'circle-radius':6,'circle-color':'#ff3158','circle-stroke-color':'#fff','circle-stroke-width':2.5}});
     styleReady=true;
+    keepRoadNetworkAboveBaseMap();
     if(styleMode==='raster')setRasterVisibility(activeBaseMap);
     if(activeBaseMap===outdoorMapId){applyOutdoorBaseAppearance();void applyOutdoorLayers(generation).catch(error=>{console.warn('Outdoor terrain layers failed',error);postHostMessage({type:'mapError',error:t('Web.OutdoorLoadFailed')})})}
     applyOverlayData();
@@ -401,6 +415,15 @@
     if(roadNetworkAvailable&&!roadNetworkInitialFit&&!trackData.features.length&&Array.isArray(roadNetworkConfig.bounds)){roadNetworkInitialFit=true;map.fitBounds([[roadNetworkConfig.bounds[0],roadNetworkConfig.bounds[1]],[roadNetworkConfig.bounds[2],roadNetworkConfig.bounds[3]]],{padding:42,maxZoom:13.5,duration:0})}
   });
   function featureCollection(features){return{type:'FeatureCollection',features}}
+  function keepRoadNetworkAboveBaseMap(){
+    if(!styleReady||!roadNetworkAvailable)return;
+    const beforeTrack=map.getLayer('gpxview-track-shadow')?'gpxview-track-shadow':undefined;
+    if(!beforeTrack)return;
+    roadNetworkArchives.forEach((_,index)=>{
+      const layerId=roadNetworkLayerId(index);
+      if(map.getLayer(layerId))map.moveLayer(layerId,beforeTrack)
+    })
+  }
   function loadTerrainResources(){
     if(terrainResourcesPromise)return terrainResourcesPromise;
     terrainResourcesPromise=fetch(terrainTileJsonUrl,{cache:'force-cache'}).then(response=>{if(!response.ok)throw new Error(`DEM TileJSON ${response.status}`);return response.json()}).then(tileJson=>{
@@ -451,6 +474,7 @@
     if(!map.getLayer(contourLabelId))map.addLayer({id:contourLabelId,type:'symbol',source:contourSourceId,'source-layer':'contours',minzoom:10,filter:['>',['get','level'],0],layout:{'symbol-placement':'line','symbol-spacing':280,'text-field':['concat',['number-format',['get','ele'],{'max-fraction-digits':0}],' m'],'text-font':['Noto Sans Regular'],'text-size':['interpolate',['linear'],['zoom'],10,9,15,11],'text-max-angle':28,'text-padding':4},paint:{'text-color':'#6b563e','text-halo-color':'rgba(244,241,221,.9)','text-halo-width':1.4}},firstSymbol);
     const beforeTrack=map.getLayer('gpxview-track-shadow')?'gpxview-track-shadow':undefined;
     if(map.getSource('openmaptiles')&&!map.getLayer(mountainPeakId))map.addLayer({id:mountainPeakId,type:'symbol',source:'openmaptiles','source-layer':'mountain_peak',minzoom:10,filter:['has','name'],layout:{'text-field':['format','▲ ',{'font-scale':.78},['coalesce',['get','name:zh'],['get','name']],{},['case',['has','ele'],['concat','\n',['to-string',['get','ele']],' m'],''],{'font-scale':.78}],'text-font':['Noto Sans Regular'],'text-size':['interpolate',['linear'],['zoom'],10,10,14,12],'text-anchor':'top','text-offset':[0,.45],'text-padding':5},paint:{'text-color':'#4d4035','text-halo-color':'rgba(245,243,226,.94)','text-halo-width':1.5}},beforeTrack);
+    keepRoadNetworkAboveBaseMap();
     applyOutdoorBaseAppearance()
   }
   function removeTerrain(){
@@ -502,6 +526,7 @@
       const beforeTrack=map.getLayer('gpxview-track-shadow')?'gpxview-track-shadow':undefined;
       if(!map.getLayer(terrainReliefId))map.addLayer({id:terrainReliefId,type:'color-relief',source:terrainSourceId,paint:{'color-relief-color':terrainReliefColor(),'color-relief-opacity':darkTheme ? .24 : .2}},beforeTrack);
       if(!map.getLayer(terrainHillshadeId))map.addLayer({id:terrainHillshadeId,type:'hillshade',source:terrainSourceId,paint:{'hillshade-method':'standard','hillshade-illumination-direction':135,'hillshade-illumination-altitude':25,'hillshade-illumination-anchor':'map','hillshade-highlight-color':'#ffffff','hillshade-shadow-color':'#514633','hillshade-accent-color':'rgba(45,38,28,.3)','hillshade-exaggeration':.45}},beforeTrack);
+      keepRoadNetworkAboveBaseMap();
       applyTerrainAppearance();
       map.setTerrain({source:terrainSourceId,exaggeration:1});
       if(animate)map.easeTo({pitch:defaultTerrainPitch,duration:650});
@@ -524,7 +549,7 @@
     map.getSource('gpxview-tracks')?.setData(trackData);map.getSource('gpxview-track-colors')?.setData(trackColorData);map.getSource('gpxview-ends')?.setData(endData);map.getSource('gpxview-hover')?.setData(hoverData);map.getSource('gpxview-playback')?.setData(playbackData);
     if(!pendingFit)return;pendingFit=false;const bounds=new maplibregl.LngLatBounds();trackData.features.forEach(feature=>feature.geometry.coordinates.forEach(coordinate=>bounds.extend(coordinate)));if(!bounds.isEmpty())map.fitBounds(bounds,{padding:{top:55,right:55,bottom:chartPanel.hidden?55:chartPanel.offsetHeight+34,left:230},maxZoom:16,duration:500})
   }
-  function setRoadNetworkEnabled(enabled){roadNetworkEnabled=roadNetworkAvailable&&enabled;if(!styleReady)return;roadNetworkArchives.forEach((_,index)=>{const layerId=roadNetworkLayerId(index);if(map.getLayer(layerId))map.setLayoutProperty(layerId,'visibility',roadNetworkEnabled?'visible':'none')})}
+  function setRoadNetworkEnabled(enabled){roadNetworkEnabled=roadNetworkAvailable&&enabled;if(!styleReady)return;roadNetworkArchives.forEach((_,index)=>{const layerId=roadNetworkLayerId(index);if(map.getLayer(layerId))map.setLayoutProperty(layerId,'visibility',roadNetworkEnabled?'visible':'none')});keepRoadNetworkAboveBaseMap()}
   function setRoadNetworkConfig(config){
     const previous=JSON.stringify(roadNetworkArchives.map(archive=>[archive.url,archive.minZoom,archive.maxZoom,archive.tileSize]));
     roadNetworkConfig=config||{};roadNetworkArchives=Array.isArray(roadNetworkConfig.archives)?roadNetworkConfig.archives.filter(archive=>archive?.url):[];roadNetworkAvailable=Boolean(roadNetworkConfig.available&&roadNetworkArchives.length);roadNetworkEnabled=roadNetworkAvailable&&roadNetworkConfig.enabled!==false;
@@ -563,7 +588,8 @@
   function renderSettings(){
     settingsLanguage.value=settingsState.language||'system';geocodingToggle.disabled=!settingsState.geocodingAvailable;geocodingToggle.setAttribute('aria-checked',String(Boolean(settingsState.geocodingEnabled)));geocodingToggle.setAttribute('aria-label',t('Settings.Geocoding'));
     document.getElementById('aboutVersion').textContent=settingsState.version||'—';document.getElementById('aboutChannel').textContent=t(settingsState.channel==='Store'?'Settings.ChannelStore':'Settings.ChannelGitHub');renderFileAssociations();roadNetworkList.replaceChildren();
-    const archives=settingsState.roadNetworks||[];roadNetworkSettingsSection.hidden=!archives.length;archives.forEach(archive=>renderRoadArchive(roadNetworkList,archive,archive.fileName))
+    const archives=settingsState.roadNetworks||[],cache=settingsState.roadNetworkCache||{},showCache=Boolean(cache.visible);roadNetworkSettingsSection.hidden=!archives.length&&!showCache;roadNetworkLocalBlock.hidden=!archives.length;archives.forEach(archive=>renderRoadArchive(roadNetworkList,archive,archive.fileName));
+    roadNetworkCacheBlock.hidden=!showCache;roadNetworkCacheDescription.textContent=cache.entries?t('Settings.RoadNetworkCacheDescription',formatFileSize(cache.bytes),cache.entries):t('Settings.RoadNetworkCacheEmpty');roadCacheClearButton.disabled=Boolean(cache.busy)||!cache.entries;roadCacheClearButton.textContent=t(cache.busy?'Settings.ClearingRoadNetworkCache':'Settings.ClearRoadNetworkCache')
   }
   function renderFileAssociations(){
     fileAssociationList.replaceChildren();
@@ -723,7 +749,9 @@
   }
   function rebuildTrackMapData(){
     const features=[];
-    loadedTracks.forEach(track=>{
+    const tracks=[...loadedTracks.values()].filter(track=>track.visible);
+    const inactiveTracks=tracks.filter(track=>track.id!==activeTrackId),activeTracks=tracks.filter(track=>track.id===activeTrackId);
+    inactiveTracks.concat(activeTracks).forEach(track=>{
       if(!track.visible)return;
       (track.segments||[]).filter(segment=>segment.coordinates?.length).forEach(segment=>features.push({type:'Feature',properties:{trackId:track.id,color:track.color||'#176bde',active:track.id===activeTrackId},geometry:{type:'LineString',coordinates:segment.coordinates}}))
     });

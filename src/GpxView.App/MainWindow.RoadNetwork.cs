@@ -25,10 +25,12 @@ public partial class MainWindow
     private readonly Lazy<IRoadNetworkCredentialStore> roadNetworkCredentialStore =
         new(() => new WindowsCredentialLockerRoadNetworkStore());
     private readonly SemaphoreSlim remoteRoadNetworkGate = new(1, 1);
+    private readonly RoadNetworkRangeCache roadNetworkRangeCache = new(AppPaths.RoadNetworkCacheFolder);
     private RoadNetworkServiceClient? roadNetworkServiceClient;
     private string remoteRoadNetworkStatus = "disconnected";
     private string remoteRoadNetworkError = string.Empty;
     private bool remoteRoadNetworkBusy;
+    private bool roadNetworkCacheBusy;
     private bool roadNetworkInitialized;
     private bool roadNetworkEnabled;
 
@@ -175,6 +177,20 @@ public partial class MainWindow
         }).ToArray()
     };
 
+    private object BuildRoadNetworkCacheSettingsPayload()
+    {
+        var stats = roadNetworkRangeCache.GetStats();
+        return new
+        {
+            Visible = stats.Entries > 0
+                      || !string.IsNullOrWhiteSpace(appSettings.RoadNetworkServiceEndpoint)
+                      || roadNetworkServiceClient?.HasDeviceToken == true,
+            stats.Bytes,
+            stats.Entries,
+            Busy = roadNetworkCacheBusy
+        };
+    }
+
     private void ConfigureRoadNetworkRequests(CoreWebView2 core)
     {
         core.AddWebResourceRequestedFilter("https://roadnet.gpxview/archives/*", CoreWebView2WebResourceContext.All);
@@ -225,11 +241,46 @@ public partial class MainWindow
                 return;
             }
 
+            var isGet = string.Equals(request.Method, "GET", StringComparison.OrdinalIgnoreCase);
+            long rangeStart = 0;
+            long rangeEnd = 0;
+            var hasCacheableRange = isGet
+                                    && TryParseRoadNetworkRange(
+                                        rangeHeader,
+                                        remoteArchive.Bytes,
+                                        out rangeStart,
+                                        out rangeEnd);
+            if (hasCacheableRange
+                && roadNetworkRangeCache.TryRead(
+                    remoteArchive.CacheKey,
+                    remoteArchive.ETag,
+                    rangeStart,
+                    rangeEnd,
+                    out var cachedContent))
+            {
+                eventArgs.Response = CreateCachedRemoteRoadNetworkResponse(
+                    core,
+                    remoteArchive,
+                    cachedContent,
+                    rangeStart,
+                    rangeEnd);
+                return;
+            }
+
             var response = await serviceClient.ReadArchiveAsync(
                 remoteArchive.ServicePath,
                 request.Method,
                 rangeHeader,
                 lifetimeCancellation.Token);
+            if (hasCacheableRange && IsCacheableRemoteRoadNetworkResponse(response, remoteArchive, rangeStart, rangeEnd))
+            {
+                roadNetworkRangeCache.TryWrite(
+                    remoteArchive.CacheKey,
+                    remoteArchive.ETag,
+                    rangeStart,
+                    rangeEnd,
+                    response.Content);
+            }
             eventArgs.Response = CreateRemoteRoadNetworkResponse(core, response, request.Method);
         }
         catch (OperationCanceledException)
@@ -314,6 +365,71 @@ public partial class MainWindow
             response.StatusCode,
             response.ReasonPhrase,
             CorsHeaders(headers.ToString()));
+    }
+
+    private static CoreWebView2WebResourceResponse CreateCachedRemoteRoadNetworkResponse(
+        CoreWebView2 core,
+        RemoteRoadNetworkArchive archive,
+        byte[] content,
+        long start,
+        long end)
+    {
+        var headers = new StringBuilder()
+            .AppendLine("Content-Type: application/vnd.pmtiles")
+            .AppendLine("Accept-Ranges: bytes")
+            .AppendLine($"Content-Range: bytes {start}-{end}/{archive.Bytes}")
+            .AppendLine($"Content-Length: {content.LongLength}");
+        AppendResponseHeader(headers, "ETag", archive.ETag);
+        return core.Environment.CreateWebResourceResponse(
+            new MemoryStream(content, writable: false),
+            206,
+            "Partial Content",
+            CorsHeaders(headers.ToString()));
+    }
+
+    private static bool IsCacheableRemoteRoadNetworkResponse(
+        RoadNetworkArchiveResponse response,
+        RemoteRoadNetworkArchive archive,
+        long start,
+        long end)
+    {
+        if (response.StatusCode != 206 || response.Content.LongLength != end - start + 1) return false;
+        if (!string.IsNullOrWhiteSpace(response.ETag)
+            && !string.Equals(NormalizeETag(response.ETag), NormalizeETag(archive.ETag), StringComparison.Ordinal))
+            return false;
+        var expectedContentRange = $"bytes {start}-{end}/{archive.Bytes}";
+        return string.IsNullOrWhiteSpace(response.ContentRange)
+               || string.Equals(response.ContentRange, expectedContentRange, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeETag(string value)
+    {
+        var trimmed = value.Trim();
+        return trimmed.StartsWith("W/", StringComparison.OrdinalIgnoreCase) ? trimmed[2..] : trimmed;
+    }
+
+    private static bool TryParseRoadNetworkRange(
+        string? rangeHeader,
+        long archiveLength,
+        out long start,
+        out long end)
+    {
+        start = 0;
+        end = archiveLength - 1;
+        const string prefix = "bytes=";
+        if (archiveLength <= 0
+            || string.IsNullOrWhiteSpace(rangeHeader)
+            || !rangeHeader.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var range = rangeHeader[prefix.Length..];
+        if (range.Contains(',')) return false;
+        var separator = range.IndexOf('-');
+        if (separator <= 0 || !long.TryParse(range[..separator], out start)) return false;
+        if (separator + 1 < range.Length && !long.TryParse(range[(separator + 1)..], out end)) return false;
+        if (start < 0 || start >= archiveLength) return false;
+        end = Math.Min(end, archiveLength - 1);
+        return end >= start;
     }
 
     private static void AppendResponseHeader(StringBuilder headers, string name, string? value)
@@ -576,6 +692,9 @@ public partial class MainWindow
             || archive.Bytes <= 0
             || !Uri.TryCreate(endpoint, archive.Path, out var archiveUri)
             || !SameOrigin(endpoint, archiveUri)) return false;
+        var etag = string.IsNullOrWhiteSpace(archive.Etag)
+            ? $"bytes:{archive.Bytes}"
+            : archive.Etag.Trim();
         entry = new RemoteRoadNetworkArchive(
             $"remote-{index}",
             archive.Id,
@@ -585,7 +704,9 @@ public partial class MainWindow
             archive.MinZoom,
             archive.MaxZoom,
             archive.TileSize,
-            archive.Bytes);
+            archive.Bytes,
+            etag,
+            $"{endpoint.AbsoluteUri}\n{archive.Id}");
         return true;
     }
 
@@ -624,6 +745,30 @@ public partial class MainWindow
     private static bool BoundsOverlap(double[] left, double[] right) =>
         left[0] < right[2] && left[2] > right[0]
         && left[1] < right[3] && left[3] > right[1];
+
+    private async Task ClearRoadNetworkCacheAsync()
+    {
+        if (roadNetworkCacheBusy) return;
+        roadNetworkCacheBusy = true;
+        SendSettingsState();
+        try
+        {
+            await Task.Run(() => roadNetworkRangeCache.Clear(), lifetimeCancellation.Token);
+            StatusText.Text = T("Status.RoadNetworkCacheCleared");
+        }
+        catch (Exception exception) when (exception is OperationCanceledException
+                                               or IOException
+                                               or UnauthorizedAccessException)
+        {
+            if (!lifetimeCancellation.IsCancellationRequested)
+                StatusText.Text = T("Status.RoadNetworkCacheClearFailed");
+        }
+        finally
+        {
+            roadNetworkCacheBusy = false;
+            SendSettingsState();
+        }
+    }
 
     private void OnRoadNetworkToggle(object sender, RoutedEventArgs eventArgs)
     {
@@ -712,5 +857,7 @@ public partial class MainWindow
         int MinZoom,
         int MaxZoom,
         int TileSize,
-        long Bytes);
+        long Bytes,
+        string ETag,
+        string CacheKey);
 }

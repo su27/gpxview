@@ -72,6 +72,9 @@ public partial class MainWindow
                 RefreshRoadNetworkArchives();
                 SendSettingsState();
                 break;
+            case "clearRoadNetworkCache":
+                _ = ClearRoadNetworkCacheAsync();
+                break;
             case "connectRoadNetworkService"
                 when TryReadString(message, "endpoint", out var endpoint)
                      && TryReadString(message, "enrollmentCode", out var enrollmentCode):
