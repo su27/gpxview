@@ -1,0 +1,98 @@
+name: Release Windows Installer
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release, for example v0.2.3"
+        required: true
+        default: "v0.2.3"
+
+permissions:
+  contents: write
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+
+    steps:
+      - name: Resolve release tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $tag = "${{ inputs.tag }}"
+          } else {
+            $tag = "${{ github.ref_name }}"
+          }
+          if ($tag -notmatch '^v\d+\.\d+\.\d+$') {
+            throw "Invalid release tag: $tag"
+          }
+          "RELEASE_TAG=$tag" >> $env:GITHUB_ENV
+          "VERSION=$($tag.Substring(1))" >> $env:GITHUB_ENV
+
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Test
+        run: dotnet test GpxView.sln --configuration Release
+
+      - name: Publish GitHub payload
+        run: dotnet publish src\GpxView.App\GpxView.App.csproj -p:PublishProfile=win-x64
+
+      - name: Validate public payload
+        shell: pwsh
+        run: |
+          if (Test-Path artifacts\publish\win-x64\MapServices.local.json) {
+            throw "MapServices.local.json must not be included in public GitHub releases."
+          }
+
+      - name: Build MSI
+        run: dotnet build installer\GpxView.Installer.wixproj -c Release
+
+      - name: Write release notes
+        shell: pwsh
+        run: |
+          @"
+          ## Changes
+
+          - Cache remote road-network PMTiles byte ranges locally and expose cache size/clear action in Settings.
+          - Add Worker edge caching for PMTiles range responses and a safer remote upload helper.
+          - Keep road-network overlays above vector basemap labels while staying below user tracks.
+          - Render the selected track above other open tracks for clearer comparison.
+          - Accept multi-file drag-and-drop directly onto the map window.
+          - Bump Windows package version to $env:VERSION.
+
+          ## Artifact
+
+          - GpxView-$env:VERSION-win-x64.msi
+
+          Note: the public GitHub installer does not embed local MapServices.local.json / Tianditu keys. Private builds can opt in with -p:IncludeLocalMapServices=true.
+          "@ | Set-Content -LiteralPath release-notes.md -Encoding UTF8
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $asset = "artifacts\installer\GpxView-$env:VERSION-win-x64.msi"
+          if (-not (Test-Path $asset)) {
+            throw "Missing MSI asset: $asset"
+          }
+
+          gh release view $env:RELEASE_TAG *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release edit $env:RELEASE_TAG --title "GpxView $env:VERSION" --notes-file release-notes.md --latest
+            gh release upload $env:RELEASE_TAG $asset --clobber
+          } else {
+            gh release create $env:RELEASE_TAG $asset --title "GpxView $env:VERSION" --notes-file release-notes.md --latest --verify-tag
+          }
