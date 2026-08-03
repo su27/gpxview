@@ -625,8 +625,17 @@ public partial class MainWindow : Window
             || index == profileCandidates.Count - 1
             || index > 0 && profileCandidates[index - 1].SegmentIndex != point.SegmentIndex
             || index + 1 < profileCandidates.Count && profileCandidates[index + 1].SegmentIndex != point.SegmentIndex).ToArray();
+        var waypoints = document.Waypoints.Select(waypoint => new WebWaypoint(
+            waypoint.Latitude,
+            waypoint.Longitude,
+            waypoint.ElevationMeters,
+            waypoint.Name,
+            waypoint.Comment,
+            waypoint.Description,
+            waypoint.Symbol,
+            waypoint.Type)).ToArray();
         return new WebTrackPayload(track.Id, document.Name, Path.GetFileName(track.Path), track.Color,
-            track.Visible, track.PlaceName, segments, profile, BuildWebSummary(document, statistics));
+            track.Visible, track.PlaceName, segments, waypoints, profile, BuildWebSummary(document, statistics));
     }
 
     private WebSummary BuildWebSummary(TrackDocument document, TrackStatistics statistics)
@@ -635,9 +644,12 @@ public partial class MainWindow : Window
         if (statistics.AverageCadenceRpm is { } averageCadence) sensorValues.Add($"{averageCadence:N0} rpm");
         if (statistics.AveragePowerWatts is { } averagePower) sensorValues.Add($"{averagePower:N0} W");
 
+        var formatLine = TF("Summary.FormatLine", document.Format.ToString().ToUpperInvariant(),
+            statistics.SegmentCount, statistics.PointCount);
+        if (document.WaypointCount > 0) formatLine += $" · {TF("Summary.StatusWaypoints", document.WaypointCount)}";
+
         return new WebSummary(
-            TF("Summary.FormatLine", document.Format.ToString().ToUpperInvariant(),
-                statistics.SegmentCount, statistics.PointCount),
+            formatLine,
             statistics.DistanceMeters >= 1000 ? $"{statistics.DistanceMeters / 1000:N2} km" : $"{statistics.DistanceMeters:N0} m",
             statistics.Duration > TimeSpan.Zero ? $"{FormatDuration(statistics.Duration)} / {FormatDuration(statistics.MovingTime)}" : null,
             statistics.MinimumElevationMeters is not null ? $"↑ {statistics.ElevationGainMeters:N0} m   ↓ {statistics.ElevationLossMeters:N0} m" : null,
@@ -660,6 +672,7 @@ public partial class MainWindow : Window
         if (statistics.MinimumElevationMeters is not null) values.Add($"↑ {statistics.ElevationGainMeters:N0} m");
         if (statistics.Duration > TimeSpan.Zero) values.Add(FormatDuration(statistics.Duration));
         values.Add(TF("Summary.StatusPoints", statistics.PointCount));
+        if (document.WaypointCount > 0) values.Add(TF("Summary.StatusWaypoints", document.WaypointCount));
         return string.Join("  ·  ", values);
     }
 
@@ -730,10 +743,13 @@ public partial class MainWindow : Window
     }
 
     private sealed record WebTrackPayload(string Id, string Name, string FileName, string Color, bool Visible,
-        string? PlaceName, IReadOnlyList<WebSegment> Segments, IReadOnlyList<WebPoint> Profile, WebSummary Summary);
+        string? PlaceName, IReadOnlyList<WebSegment> Segments, IReadOnlyList<WebWaypoint> Waypoints,
+        IReadOnlyList<WebPoint> Profile, WebSummary Summary);
     private sealed record WebSummary(string FormatLine, string Distance, string? Duration, string? Elevation,
         string? Speed, string? HeartRate, string? CadencePower);
     private sealed record WebSegment(IReadOnlyList<double[]> Coordinates);
+    private sealed record WebWaypoint(double Latitude, double Longitude, double? ElevationMeters,
+        string? Name, string? Comment, string? Description, string? Symbol, string? Type);
     private sealed record WebPoint(double Latitude, double Longitude, double DistanceKm, double? ElevationMeters,
         double? SpeedKmh, int? HeartRateBpm, int? CadenceRpm, double? PowerWatts,
         int SegmentIndex, double? ElapsedSeconds);

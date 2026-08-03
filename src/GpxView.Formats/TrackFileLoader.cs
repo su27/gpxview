@@ -35,7 +35,8 @@ public sealed class TrackFileLoader
             var format = DetectFormat(path, stream);
             stream.Position = 0;
             var document = readers[format].Read(stream, path);
-            if (document.PointCount == 0) throw new InvalidDataException("文件中没有可显示的轨迹点。");
+            if (document.PointCount == 0 && document.WaypointCount == 0)
+                throw new InvalidDataException("文件中没有可显示的轨迹点或标注点。");
             return CoordinateConverter.ToWgs84(document, options.SourceCoordinateSystem);
         }, cancellationToken);
     }

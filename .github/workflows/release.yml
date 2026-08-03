@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to release, for example v0.2.3"
+        description: "Tag to release, for example v0.2.4"
         required: true
-        default: "v0.2.3"
+        default: "v0.2.4"
 
 permissions:
   contents: write
@@ -65,11 +65,9 @@ jobs:
           @"
           ## Changes
 
-          - Cache remote road-network PMTiles byte ranges locally and expose cache size/clear action in Settings.
-          - Add Worker edge caching for PMTiles range responses and a safer remote upload helper.
-          - Keep road-network overlays above vector basemap labels while staying below user tracks.
-          - Render the selected track above other open tracks for clearer comparison.
-          - Accept multi-file drag-and-drop directly onto the map window.
+          - Display GPX waypoints and KML/KMZ point placemarks on the map.
+          - Show waypoint names and click-through details including description, elevation, symbol, and type.
+          - Support files that contain waypoints without a recorded track.
           - Bump Windows package version to $env:VERSION.
 
           ## Artifact

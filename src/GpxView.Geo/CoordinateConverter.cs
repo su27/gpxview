@@ -17,7 +17,8 @@ public static class CoordinateConverter
             Segments = document.Segments.Select(segment => segment with
             {
                 Points = segment.Points.Select(point => ConvertPoint(point, source)).ToArray()
-            }).ToArray()
+            }).ToArray(),
+            Waypoints = document.Waypoints.Select(waypoint => ConvertWaypoint(waypoint, source)).ToArray()
         };
     }
 
@@ -31,6 +32,18 @@ public static class CoordinateConverter
         };
 
         return point with { Latitude = latitude, Longitude = longitude };
+    }
+
+    private static TrackWaypoint ConvertWaypoint(TrackWaypoint waypoint, SourceCoordinateSystem source)
+    {
+        var (latitude, longitude) = source switch
+        {
+            SourceCoordinateSystem.Gcj02 => Gcj02ToWgs84(waypoint.Latitude, waypoint.Longitude),
+            SourceCoordinateSystem.Bd09 => Bd09ToWgs84(waypoint.Latitude, waypoint.Longitude),
+            _ => (waypoint.Latitude, waypoint.Longitude)
+        };
+
+        return waypoint with { Latitude = latitude, Longitude = longitude };
     }
 
     public static (double Latitude, double Longitude) Bd09ToWgs84(double latitude, double longitude)

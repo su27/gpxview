@@ -35,6 +35,7 @@
     #documentScrim{z-index:43}#documentPanel{position:absolute;z-index:44;left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,calc(100% - 30px));height:min(650px,calc(100% - 30px));border-radius:17px;overflow:hidden;display:flex;flex-direction:column}#documentContent{flex:1;margin:0;padding:18px 20px 24px;overflow:auto;white-space:pre-wrap;color:var(--text);font:12px/1.65 "Segoe UI",sans-serif;user-select:text}
     #consentPanel{position:absolute;z-index:39;left:50%;top:50%;transform:translate(-50%,-50%);width:min(500px,calc(100% - 30px));border-radius:17px;padding:22px}#consentTitle{margin:0 0 10px;font-size:20px}#consentDescription{margin:0;color:var(--muted);font-size:12px;line-height:1.65}.consentActions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:19px}.consentLink{margin-right:auto;border:0;background:transparent;color:#176bde;font:12px "Segoe UI",sans-serif;cursor:pointer}
     .maplibregl-ctrl-attrib{font-size:10px}.maplibregl-ctrl-group{border-radius:8px!important}.maplibregl-ctrl-bottom-left{transition:bottom .28s ease}body.chart-visible:not(.details-hidden) .maplibregl-ctrl-bottom-left{bottom:200px}body.chart-visible.compact-chart:not(.details-hidden) .maplibregl-ctrl-bottom-left{bottom:54px}.maplibregl-ctrl-scale{border-color:var(--text)!important;border-top:0!important;background:var(--chart-glass)!important;color:var(--text)!important;border-radius:0 0 3px 3px}
+    .maplibregl-popup-content{background:var(--chart-glass);color:var(--text);border:1px solid var(--glass-border);border-radius:10px;box-shadow:inset 0 0 0 1px var(--inner-border),0 8px 24px var(--shadow);backdrop-filter:blur(14px) saturate(135%);-webkit-backdrop-filter:blur(14px) saturate(135%);padding:10px 12px}.maplibregl-popup-close-button{color:var(--muted);font-size:18px;padding:2px 6px}.waypointPopup{min-width:130px;max-width:240px;font-size:12px;line-height:1.45}.waypointPopupTitle{padding-right:15px;font-size:13px;font-weight:700}.waypointPopupDescription{margin-top:5px;color:var(--text);white-space:pre-wrap;overflow-wrap:anywhere}.waypointPopupMeta{margin-top:6px;color:var(--muted);font-size:11px}
     .gpxviewCompass{width:38px;height:38px;border-radius:10px;box-shadow:0 1px 5px var(--shadow);overflow:visible}.gpxviewCompass button{display:flex;width:38px;height:38px;align-items:center;justify-content:center;padding:4px;border:1px solid var(--glass-border);border-radius:10px;background:var(--chart-glass);color:var(--text);box-shadow:inset 0 0 0 1px var(--inner-border);backdrop-filter:blur(14px) saturate(135%);-webkit-backdrop-filter:blur(14px) saturate(135%);cursor:pointer}.gpxviewCompass button:hover{background:var(--glass)}.gpxviewCompass button:focus-visible{outline:2px solid #176bde;outline-offset:2px}.gpxviewCompass svg{display:block;width:28px;height:28px;transform-origin:center}.gpxviewCompassRing{fill:rgba(127,127,127,.08);stroke:var(--muted);stroke-width:1}.gpxviewCompassNorth{fill:#e5484d}.gpxviewCompassSouth{fill:var(--muted)}.gpxviewCompassHub{fill:var(--text);stroke:var(--chart-glass);stroke-width:1}
     :root[data-theme="dark"] .maplibregl-ctrl-attrib{background:rgba(32,32,32,.86);color:#ddd}:root[data-theme="dark"] .maplibregl-ctrl-attrib a{color:#8ab4f8}
     @media(max-width:1050px){#summaryPanel{left:10px;top:10px;width:184px;padding:12px}#detailsToggle{left:156px;top:16px}body.details-hidden #detailsToggle{left:10px}#trackTabs{left:204px;right:58px;top:10px}#chartPanel{left:10px;right:10px;bottom:10px}#trackColorLegend{display:none}body.chart-visible:not(.details-hidden) .maplibregl-ctrl-bottom-left{bottom:196px}}
@@ -209,7 +210,7 @@
 </div>
 <script>
   const fallbackStrings={
-    'Web.CompassNorth':'当前朝向：正北；点击回到正北','Web.CompassBearing':'当前朝向：{0} {1}°；点击回到正北','Web.North':'北','Web.NorthEast':'东北','Web.East':'东','Web.SouthEast':'东南','Web.South':'南','Web.SouthWest':'西南','Web.West':'西','Web.NorthWest':'西北','Web.NoData':'暂无数据','Web.TrackSummary':'轨迹摘要','Place.Recognizing':'正在识别地点…','Place.Unavailable':'地点暂不可用','Web.HideDetails':'隐藏详细信息（Tab）','Web.ShowDetails':'显示详细信息（Tab）','Web.Play':'播放轨迹','Web.Pause':'暂停轨迹回放','Web.Elevation':'海拔','Web.Slope':'坡度','Web.Speed':'速度','Web.HeartRate':'心率','Web.Power':'功率','Web.NoElevation':'无海拔数据','Web.PlaceUnknown':'地点尚未识别','Web.UntitledTrack':'未命名轨迹','Web.RoadAttribution':'本地历史轨迹密度'
+    'Web.CompassNorth':'当前朝向：正北；点击回到正北','Web.CompassBearing':'当前朝向：{0} {1}°；点击回到正北','Web.North':'北','Web.NorthEast':'东北','Web.East':'东','Web.SouthEast':'东南','Web.South':'南','Web.SouthWest':'西南','Web.West':'西','Web.NorthWest':'西北','Web.NoData':'暂无数据','Web.TrackSummary':'轨迹摘要','Place.Recognizing':'正在识别地点…','Place.Unavailable':'地点暂不可用','Web.HideDetails':'隐藏详细信息（Tab）','Web.ShowDetails':'显示详细信息（Tab）','Web.Play':'播放轨迹','Web.Pause':'暂停轨迹回放','Web.Elevation':'海拔','Web.Slope':'坡度','Web.Speed':'速度','Web.HeartRate':'心率','Web.Power':'功率','Web.Waypoint':'标注点','Web.WaypointElevation':'海拔 {0} m','Web.NoElevation':'无海拔数据','Web.PlaceUnknown':'地点尚未识别','Web.UntitledTrack':'未命名轨迹','Web.RoadAttribution':'本地历史轨迹密度'
   };
   let locale='zh-CN',localizedStrings={};
   function t(key,...values){let text=localizedStrings[key]??fallbackStrings[key]??key;values.forEach((value,index)=>text=text.replaceAll(`{${index}}`,String(value)));return text}
@@ -248,7 +249,7 @@
     humanitarian:{layers:[rasterLayer(['https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png'],19,'© OpenStreetMap contributors | Tiles style by HOT')]}
   };
   function createRasterStyle(visibleId){
-    const rasterStyle={version:8,sources:{},layers:[]};
+    const rasterStyle={version:8,glyphs:'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',sources:{},layers:[]};
     Object.entries(rasterMaps).forEach(([id,config])=>{
       config.layerIds=[];
       config.layers.forEach((layer,index)=>{
@@ -283,6 +284,7 @@
     }
   }
   const map=new maplibregl.Map({container:'map',style:openFreeMapStyle,center:[105,35],zoom:2,maxPitch:maxTerrainPitch,pitchWithRotate:false,touchPitch:false,attributionControl:false});
+  const waypointPopup=new maplibregl.Popup({offset:14,closeButton:true,closeOnClick:true});
   const compassControl=new CompassControl();map.addControl(compassControl,'top-right');
   map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
   map.addControl(new maplibregl.ScaleControl({maxWidth:110,unit:'metric'}),'bottom-left');
@@ -311,7 +313,7 @@
   const loadedTracks=new Map();
   let activeTrackId=null,profile=[],styleReady=false,styleMode=openFreeMapId,activeBaseMap=openFreeMapId,darkTheme=false,availableSeries={},availableTrackColors={},trackColorMode='uniform';
   let terrainEnabled=false,terrainResourcesPromise=null,contourDemSource=null,terrainAnimateOnReady=false,styleGeneration=0,roadNetworkEnabled=roadNetworkAvailable&&roadNetworkConfig.enabled!==false,roadNetworkInitialFit=false;
-  let trackData=featureCollection([]),trackColorData=featureCollection([]),endData=featureCollection([]),hoverData=featureCollection([]),playbackData=featureCollection([]),pendingFit=false,trackHasChartData=false;
+  let trackData=featureCollection([]),trackColorData=featureCollection([]),waypointData=featureCollection([]),endData=featureCollection([]),hoverData=featureCollection([]),playbackData=featureCollection([]),pendingFit=false,trackHasChartData=false;
   let currentRecentEntries=[],settingsState={language:'system',resolvedLocale:'zh-CN',geocodingAvailable:true,geocodingEnabled:false,geocodingConsentPending:false,version:'',channel:'GitHub',fileAssociations:[],roadNetworks:[],roadNetworkCache:{visible:false,bytes:0,entries:0,busy:false}};
   const playback={axis:[],usesTime:false,total:0,position:0,playing:false,maximumDuration:120,follow:false,frameId:0,startTimestamp:0,startPosition:0,currentIndex:-1,lastFollowTimestamp:0};
   const canvas=document.getElementById('chart'),meta=document.getElementById('chartMeta'),chartPanel=document.getElementById('chartPanel'),summaryPanel=document.getElementById('summaryPanel'),summaryMetrics=document.getElementById('summaryMetrics'),elevationLegend=document.getElementById('elevationLegend'),detailsToggle=document.getElementById('detailsToggle'),recentPanel=document.getElementById('recentPanel'),recentScrim=document.getElementById('recentScrim'),recentList=document.getElementById('recentList'),trackTabs=document.getElementById('trackTabs'),trackColorSelect=document.getElementById('trackColorSelect'),trackColorLegend=document.getElementById('trackColorLegend'),playbackBar=document.getElementById('playbackBar'),playbackToggle=document.getElementById('playbackToggle'),playbackRange=document.getElementById('playbackRange'),playbackPosition=document.getElementById('playbackPosition'),playbackSpeed=document.getElementById('playbackSpeed'),playbackFollow=document.getElementById('playbackFollow'),terrainReadout=document.getElementById('terrainReadout'),settingsPanel=document.getElementById('settingsPanel'),settingsScrim=document.getElementById('settingsScrim'),settingsLanguage=document.getElementById('settingsLanguage'),geocodingToggle=document.getElementById('geocodingToggle'),fileAssociationList=document.getElementById('fileAssociationList'),roadNetworkSettingsSection=document.getElementById('roadNetworkSettingsSection'),roadNetworkLocalBlock=document.getElementById('roadNetworkLocalBlock'),roadNetworkList=document.getElementById('roadNetworkList'),roadNetworkCacheBlock=document.getElementById('roadNetworkCacheBlock'),roadNetworkCacheDescription=document.getElementById('roadNetworkCacheDescription'),roadCacheClearButton=document.getElementById('roadCacheClearButton'),documentPanel=document.getElementById('documentPanel'),documentScrim=document.getElementById('documentScrim'),documentContent=document.getElementById('documentContent'),consentPanel=document.getElementById('consentPanel'),consentScrim=document.getElementById('consentScrim');
@@ -341,13 +343,22 @@
   map.on('pitch',()=>{if(!terrainEnabled&&map.getPitch()!==0)map.jumpTo({pitch:0})});
   let pendingTerrainPointer=null,terrainReadoutFrame=0;
   map.on('mousemove',event=>{
+    if(!shiftDragState&&styleReady&&map.getLayer('gpxview-waypoint-dot')){
+      const features=map.queryRenderedFeatures(event.point,{layers:['gpxview-waypoint-dot','gpxview-waypoint-halo']});
+      map.getCanvas().style.cursor=features.length?'pointer':''
+    }
     pendingTerrainPointer=event;if(terrainReadoutFrame)return;terrainReadoutFrame=requestAnimationFrame(()=>{
       terrainReadoutFrame=0;const pointer=pendingTerrainPointer;if(!pointer||!terrainEnabled||!map.getTerrain()){terrainReadout.hidden=true;return}
       const elevation=map.queryTerrainElevation(pointer.lngLat);if(!Number.isFinite(elevation)){terrainReadout.hidden=true;return}
       terrainReadout.textContent=t('Web.GroundElevation',Math.round(elevation));terrainReadout.style.left=`${Math.max(0,Math.min(mapCanvasContainer.clientWidth-120,pointer.point.x))}px`;terrainReadout.style.top=`${Math.max(0,Math.min(mapCanvasContainer.clientHeight-38,pointer.point.y))}px`;terrainReadout.hidden=false
     })
   });
-  mapCanvasContainer.addEventListener('mouseleave',()=>{pendingTerrainPointer=null;terrainReadout.hidden=true});
+  map.on('click',event=>{
+    if(!styleReady||!map.getLayer('gpxview-waypoint-dot'))return;
+    const feature=map.queryRenderedFeatures(event.point,{layers:['gpxview-waypoint-dot','gpxview-waypoint-halo']})[0];
+    if(feature)showWaypointPopup(feature)
+  });
+  mapCanvasContainer.addEventListener('mouseleave',()=>{pendingTerrainPointer=null;terrainReadout.hidden=true;map.getCanvas().style.cursor=''});
   detailsToggle.addEventListener('click',()=>setDetailsVisible(document.body.classList.contains('details-hidden')));
   trackTabs.addEventListener('wheel',event=>{if(Math.abs(event.deltaY)<=Math.abs(event.deltaX))return;trackTabs.scrollLeft+=event.deltaY;event.preventDefault()},{passive:false});
   document.getElementById('recentOpenButton').addEventListener('click',()=>postHostMessage({type:'openFile'}));
@@ -399,6 +410,10 @@
     map.addLayer({id:'gpxview-track',type:'line',source:'gpxview-track-colors',layout:{'line-cap':'square','line-join':'round'},paint:{'line-color':'#176bde','line-width':4.5}});
     map.addSource('gpxview-ends',{type:'geojson',data:featureCollection([])});
     map.addLayer({id:'gpxview-ends',type:'circle',source:'gpxview-ends',paint:{'circle-radius':6,'circle-color':['match',['get','kind'],'start','#18a558','#e34b4b'],'circle-stroke-color':'#fff','circle-stroke-width':2}});
+    map.addSource('gpxview-waypoints',{type:'geojson',data:featureCollection([])});
+    map.addLayer({id:'gpxview-waypoint-halo',type:'circle',source:'gpxview-waypoints',paint:{'circle-radius':['case',['get','active'],9,7.5],'circle-color':'#fff','circle-opacity':.94,'circle-stroke-color':['get','color'],'circle-stroke-width':['case',['get','active'],2.5,2]}});
+    map.addLayer({id:'gpxview-waypoint-dot',type:'circle',source:'gpxview-waypoints',paint:{'circle-radius':['case',['get','active'],4.8,4],'circle-color':['get','color'],'circle-stroke-color':'rgba(0,0,0,.18)','circle-stroke-width':1}});
+    map.addLayer({id:'gpxview-waypoint-label',type:'symbol',source:'gpxview-waypoints',filter:['!=',['get','label'],''],layout:{'text-field':['get','label'],'text-font':['Noto Sans Regular'],'text-size':['case',['get','active'],12,11],'text-anchor':'top','text-offset':[0,1.05],'text-padding':4},paint:{'text-color':['get','color'],'text-halo-color':'#fff','text-halo-width':1.8}});
     map.addSource('gpxview-hover',{type:'geojson',data:featureCollection([])});
     map.addLayer({id:'gpxview-hover',type:'circle',source:'gpxview-hover',paint:{'circle-radius':7,'circle-color':'#fff','circle-stroke-color':'#176bde','circle-stroke-width':3}});
     map.addSource('gpxview-playback',{type:'geojson',data:featureCollection([])});
@@ -546,8 +561,8 @@
   }
   function applyOverlayData(){
     if(!styleReady)return;
-    map.getSource('gpxview-tracks')?.setData(trackData);map.getSource('gpxview-track-colors')?.setData(trackColorData);map.getSource('gpxview-ends')?.setData(endData);map.getSource('gpxview-hover')?.setData(hoverData);map.getSource('gpxview-playback')?.setData(playbackData);
-    if(!pendingFit)return;pendingFit=false;const bounds=new maplibregl.LngLatBounds();trackData.features.forEach(feature=>feature.geometry.coordinates.forEach(coordinate=>bounds.extend(coordinate)));if(!bounds.isEmpty())map.fitBounds(bounds,{padding:{top:55,right:55,bottom:chartPanel.hidden?55:chartPanel.offsetHeight+34,left:230},maxZoom:16,duration:500})
+    map.getSource('gpxview-tracks')?.setData(trackData);map.getSource('gpxview-track-colors')?.setData(trackColorData);map.getSource('gpxview-waypoints')?.setData(waypointData);map.getSource('gpxview-ends')?.setData(endData);map.getSource('gpxview-hover')?.setData(hoverData);map.getSource('gpxview-playback')?.setData(playbackData);
+    if(!pendingFit)return;pendingFit=false;const bounds=new maplibregl.LngLatBounds();trackData.features.forEach(feature=>feature.geometry.coordinates.forEach(coordinate=>bounds.extend(coordinate)));waypointData.features.forEach(feature=>bounds.extend(feature.geometry.coordinates));if(!bounds.isEmpty())map.fitBounds(bounds,{padding:{top:55,right:55,bottom:chartPanel.hidden?55:chartPanel.offsetHeight+34,left:230},maxZoom:16,duration:500})
   }
   function setRoadNetworkEnabled(enabled){roadNetworkEnabled=roadNetworkAvailable&&enabled;if(!styleReady)return;roadNetworkArchives.forEach((_,index)=>{const layerId=roadNetworkLayerId(index);if(map.getLayer(layerId))map.setLayoutProperty(layerId,'visibility',roadNetworkEnabled?'visible':'none')});keepRoadNetworkAboveBaseMap()}
   function setRoadNetworkConfig(config){
@@ -570,6 +585,16 @@
   function postHostMessage(message){gpxHost.send(message)}
   function setPlaceName(placeName){document.getElementById('summaryLocation').textContent=placeName||t('Place.Unavailable')}
   function activeTrack(){return activeTrackId?loadedTracks.get(activeTrackId):null}
+  function waypointLabel(waypoint){return waypoint?.name||waypoint?.comment||waypoint?.symbol||waypoint?.type||''}
+  function waypointTitle(waypoint,index){return waypointLabel(waypoint)||`${t('Web.Waypoint')} ${index+1}`}
+  function showWaypointPopup(feature){
+    const properties=feature.properties||{},content=document.createElement('div');content.className='waypointPopup';
+    const title=document.createElement('div');title.className='waypointPopupTitle';title.textContent=properties.title||t('Web.Waypoint');content.append(title);
+    if(properties.description&&properties.description!==properties.title){const description=document.createElement('div');description.className='waypointPopupDescription';description.textContent=properties.description;content.append(description)}
+    const metaValues=[];if(properties.elevationMeters!==undefined&&properties.elevationMeters!==null&&properties.elevationMeters!=='')metaValues.push(t('Web.WaypointElevation',Math.round(Number(properties.elevationMeters))));if(properties.symbol)metaValues.push(properties.symbol);if(properties.type&&properties.type!==properties.symbol)metaValues.push(properties.type);
+    if(metaValues.length){const metaElement=document.createElement('div');metaElement.className='waypointPopupMeta';metaElement.textContent=metaValues.join(' · ');content.append(metaElement)}
+    waypointPopup.setLngLat(feature.geometry.coordinates).setDOMContent(content).addTo(map)
+  }
   function renderTrackTabs(){
     trackTabs.replaceChildren();trackTabs.hidden=loadedTracks.size===0;
     loadedTracks.forEach(track=>{
@@ -748,30 +773,35 @@
     if(playback.total<=0)return;if(playback.position>=playback.total)setPlaybackPosition(0,false);playback.playing=true;playback.startPosition=playback.position;playback.startTimestamp=performance.now();playbackToggle.textContent='Ⅱ';playbackToggle.title=t('Web.Pause');playbackToggle.setAttribute('aria-label',t('Web.Pause'));playback.frameId=requestAnimationFrame(playbackTick)
   }
   function rebuildTrackMapData(){
-    const features=[];
+    const features=[],waypointFeatures=[];
     const tracks=[...loadedTracks.values()].filter(track=>track.visible);
     const inactiveTracks=tracks.filter(track=>track.id!==activeTrackId),activeTracks=tracks.filter(track=>track.id===activeTrackId);
     inactiveTracks.concat(activeTracks).forEach(track=>{
       if(!track.visible)return;
-      (track.segments||[]).filter(segment=>segment.coordinates?.length).forEach(segment=>features.push({type:'Feature',properties:{trackId:track.id,color:track.color||'#176bde',active:track.id===activeTrackId},geometry:{type:'LineString',coordinates:segment.coordinates}}))
+      (track.segments||[]).filter(segment=>segment.coordinates?.length).forEach(segment=>features.push({type:'Feature',properties:{trackId:track.id,color:track.color||'#176bde',active:track.id===activeTrackId},geometry:{type:'LineString',coordinates:segment.coordinates}}));
+      (track.waypoints||[]).forEach((waypoint,index)=>{
+        const longitude=Number(waypoint.longitude),latitude=Number(waypoint.latitude);if(!Number.isFinite(longitude)||!Number.isFinite(latitude))return;
+        const title=waypointTitle(waypoint,index),description=waypoint.description||waypoint.comment||'';
+        waypointFeatures.push({type:'Feature',properties:{trackId:track.id,color:track.color||'#176bde',active:track.id===activeTrackId,label:waypointLabel(waypoint),title,description,elevationMeters:waypoint.elevationMeters,symbol:waypoint.symbol||'',type:waypoint.type||''},geometry:{type:'Point',coordinates:[longitude,latitude]}})
+      })
     });
-    trackData=featureCollection(features);const selected=activeTrack(),endpoints=[];
+    trackData=featureCollection(features);waypointData=featureCollection(waypointFeatures);const selected=activeTrack(),endpoints=[];
     if(selected?.visible)(selected.segments||[]).forEach(segment=>{const coordinates=segment.coordinates||[];if(!coordinates.length)return;endpoints.push({type:'Feature',properties:{kind:'start'},geometry:{type:'Point',coordinates:coordinates[0]}});if(coordinates.length>1)endpoints.push({type:'Feature',properties:{kind:'end'},geometry:{type:'Point',coordinates:coordinates.at(-1)}})});
     endData=featureCollection(endpoints)
   }
   function clearTrackDetails(){
-    pausePlayback();activeTrackId=null;profile=[];trackData=featureCollection([]);trackColorData=featureCollection([]);endData=featureCollection([]);hoverData=featureCollection([]);playbackData=featureCollection([]);summaryPanel.hidden=true;summaryMetrics.hidden=true;detailsToggle.hidden=true;chartPanel.hidden=true;playbackBar.hidden=true;trackColorLegend.hidden=true;document.body.classList.remove('chart-visible','compact-chart');meta.textContent=t('Web.NoData');renderTrackTabs();applyOverlayData();renderChart()
+    pausePlayback();waypointPopup.remove();activeTrackId=null;profile=[];trackData=featureCollection([]);trackColorData=featureCollection([]);waypointData=featureCollection([]);endData=featureCollection([]);hoverData=featureCollection([]);playbackData=featureCollection([]);summaryPanel.hidden=true;summaryMetrics.hidden=true;detailsToggle.hidden=true;chartPanel.hidden=true;playbackBar.hidden=true;trackColorLegend.hidden=true;document.body.classList.remove('chart-visible','compact-chart');meta.textContent=t('Web.NoData');renderTrackTabs();applyOverlayData();renderChart()
   }
   function activateTrack(id){
     const track=loadedTracks.get(id);if(!track){if(!loadedTracks.size)clearTrackDetails();return}
-    pausePlayback();activeTrackId=id;profile=track.profile||[];computeProfileSlopes();trackColorData=featureCollection([]);hoverData=featureCollection([]);playbackData=featureCollection([]);document.getElementById('summaryTitle').textContent=track.name||track.fileName||t('Web.TrackSummary');updateSummary(track.summary);setPlaceName(track.placeName||t('Place.Recognizing'));summaryPanel.hidden=false;detailsToggle.hidden=false;setRecentPanelVisible(false);
+    pausePlayback();waypointPopup.remove();activeTrackId=id;profile=track.profile||[];computeProfileSlopes();trackColorData=featureCollection([]);hoverData=featureCollection([]);playbackData=featureCollection([]);document.getElementById('summaryTitle').textContent=track.name||track.fileName||t('Web.TrackSummary');updateSummary(track.summary);setPlaceName(track.placeName||t('Place.Recognizing'));summaryPanel.hidden=false;detailsToggle.hidden=false;setRecentPanelVisible(false);
     trackHasChartData=refreshSeriesControls();rebuildTrackMapData();refreshTrackColorControls();const hasPlayback=profile.length>1,playbackOnly=!trackHasChartData&&hasPlayback;chartPanel.hidden=!trackHasChartData&&!hasPlayback;chartPanel.classList.toggle('playback-only',playbackOnly);document.body.classList.toggle('chart-visible',!chartPanel.hidden);document.body.classList.toggle('compact-chart',playbackOnly);preparePlayback();renderTrackTabs();applyOverlayData();renderChart(playback.currentIndex)
   }
   function setTracks(data){
     loadedTracks.clear();(data.tracks||[]).forEach(track=>{if(track?.id)loadedTracks.set(track.id,{...track,visible:track.visible!==false})});activeTrackId=loadedTracks.has(data.activeTrackId)?data.activeTrackId:loadedTracks.keys().next().value||null;pendingFit=Boolean(data.fit);if(activeTrackId)activateTrack(activeTrackId);else clearTrackDetails()
   }
   function setActiveTrack(id){if(loadedTracks.has(id))activateTrack(id)}
-  function setTrackVisibilityState(id,visible){const track=loadedTracks.get(id);if(!track)return;track.visible=Boolean(visible);if(id===activeTrackId&&!track.visible){pausePlayback();hoverData=featureCollection([]);playbackData=featureCollection([])}rebuildTrackMapData();applyTrackColorStyle();renderTrackTabs();applyOverlayData()}
+  function setTrackVisibilityState(id,visible){const track=loadedTracks.get(id);if(!track)return;track.visible=Boolean(visible);if(id===activeTrackId&&!track.visible){pausePlayback();waypointPopup.remove();hoverData=featureCollection([]);playbackData=featureCollection([])}rebuildTrackMapData();applyTrackColorStyle();renderTrackTabs();applyOverlayData()}
   function removeTrack(id,nextActiveTrackId){loadedTracks.delete(id);if(!loadedTracks.size){clearTrackDetails();return}const next=loadedTracks.has(nextActiveTrackId)?nextActiveTrackId:loadedTracks.keys().next().value;activateTrack(next)}
   function resizeCanvas(){const r=canvas.getBoundingClientRect(),d=devicePixelRatio||1;canvas.width=Math.max(1,Math.round(r.width*d));canvas.height=Math.max(1,Math.round(r.height*d));return{ctx:canvas.getContext('2d'),w:r.width,h:r.height,d}}
   function rangeFor(key){const definition=seriesDefinitions[key],values=profile.map(point=>point[definition.field]).filter(Number.isFinite);let min=Math.min(...values),max=Math.max(...values);if(key==='elevation'){min=Math.floor(min/10)*10;max=Math.ceil(max/10)*10}if(min===max){const delta=Math.max(1,Math.abs(min)*.05);min-=delta;max+=delta}else{const padding=(max-min)*.06;min-=padding;max+=padding}return{min,max}}

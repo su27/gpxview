@@ -135,7 +135,11 @@ internal static class RecentTrackEntryFactory
     {
         var segment = document.Segments.Where(candidate => candidate.Points.Count > 0)
             .MaxBy(candidate => candidate.Points.Count);
-        return segment is null ? null : segment.Points[segment.Points.Count / 2];
+        if (segment is not null) return segment.Points[segment.Points.Count / 2];
+        var waypoint = document.Waypoints.FirstOrDefault();
+        return waypoint is null
+            ? null
+            : new TrackPoint { Latitude = waypoint.Latitude, Longitude = waypoint.Longitude };
     }
 
     private static bool CoordinatesAreNearby(double firstLatitude, double firstLongitude,

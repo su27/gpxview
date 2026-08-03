@@ -31,10 +31,18 @@ public sealed class KmlTrackReader(bool compressed = false) : ITrackReader
         using var xmlReader = XmlReader.Create(stream, settings);
         var xml = XDocument.Load(xmlReader, LoadOptions.None);
         var segments = new List<TrackSegment>();
+        var waypoints = new List<TrackWaypoint>();
 
         foreach (var placemark in xml.Descendants().Where(element => element.Name.LocalName == "Placemark"))
         {
             var name = placemark.Elements().FirstOrDefault(element => element.Name.LocalName == "name")?.Value.Trim();
+            var description = placemark.Elements().FirstOrDefault(element => element.Name.LocalName == "description")?.Value.Trim();
+
+            foreach (var point in placemark.Descendants().Where(element => element.Name.LocalName == "Point"))
+            {
+                var waypoint = ParseWaypoint(point, name, description);
+                if (waypoint is not null) waypoints.Add(waypoint);
+            }
 
             foreach (var lineString in placemark.Descendants().Where(element => element.Name.LocalName == "LineString"))
             {
@@ -76,7 +84,8 @@ public sealed class KmlTrackReader(bool compressed = false) : ITrackReader
             Name = string.IsNullOrWhiteSpace(documentName) ? Path.GetFileNameWithoutExtension(sourcePath) : documentName,
             SourcePath = sourcePath,
             Format = TrackFileFormat.Kml,
-            Segments = segments
+            Segments = segments,
+            Waypoints = waypoints
         };
     }
 
@@ -91,6 +100,21 @@ public sealed class KmlTrackReader(bool compressed = false) : ITrackReader
             double? elevation = parts.Length > 2 && TryDouble(parts[2], out var parsedElevation) ? parsedElevation : null;
             yield return new TrackPoint { Latitude = latitude, Longitude = longitude, ElevationMeters = elevation };
         }
+    }
+
+    private static TrackWaypoint? ParseWaypoint(XElement point, string? name, string? description)
+    {
+        var coordinates = point.Descendants().FirstOrDefault(element => element.Name.LocalName == "coordinates")?.Value;
+        var trackPoint = ParseCoordinates(coordinates).FirstOrDefault();
+        if (trackPoint is null) return null;
+        return new TrackWaypoint
+        {
+            Latitude = trackPoint.Latitude,
+            Longitude = trackPoint.Longitude,
+            ElevationMeters = trackPoint.ElevationMeters,
+            Name = string.IsNullOrWhiteSpace(name) ? null : name,
+            Description = string.IsNullOrWhiteSpace(description) ? null : description
+        };
     }
 
     private static TrackPoint? ParseGxCoordinate(XElement element)

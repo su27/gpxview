@@ -41,6 +41,29 @@ public class TrackReaderTests
     }
 
     [Fact]
+    public void GpxReader_ParsesWaypoints()
+    {
+        const string xml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <gpx version="1.1" creator="tests" xmlns="http://www.topografix.com/GPX/1/1">
+              <metadata><name>带标注路线</name></metadata>
+              <wpt lat="39.9" lon="116.3"><ele>42.5</ele><name>补给点</name><desc>山口小卖部</desc><sym>Flag</sym><type>food</type></wpt>
+              <trk><trkseg><trkpt lat="39.91" lon="116.31" /></trkseg></trk>
+            </gpx>
+            """;
+
+        using var stream = Utf8Stream(xml);
+        var document = new GpxTrackReader().Read(stream, "marked.gpx");
+
+        var waypoint = Assert.Single(document.Waypoints);
+        Assert.Equal("补给点", waypoint.Name);
+        Assert.Equal("山口小卖部", waypoint.Description);
+        Assert.Equal("Flag", waypoint.Symbol);
+        Assert.Equal("food", waypoint.Type);
+        Assert.Equal(42.5, waypoint.ElevationMeters);
+    }
+
+    [Fact]
     public void KmlReader_ParsesLineString()
     {
         const string xml = """
@@ -56,6 +79,25 @@ public class TrackReaderTests
         Assert.Equal(2, document.PointCount);
         Assert.Equal("第一段", document.Segments[0].Name);
         Assert.Equal(20d, document.Segments[0].Points[1].ElevationMeters);
+    }
+
+    [Fact]
+    public void KmlReader_ParsesPointPlacemarkAsWaypoint()
+    {
+        const string xml = """
+            <kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>路线</name>
+              <Placemark><name>营地</name><description>河边平台</description><Point><coordinates>116.3,39.9,10</coordinates></Point></Placemark>
+              <Placemark><LineString><coordinates>116.31,39.91 116.32,39.92</coordinates></LineString></Placemark>
+            </Document></kml>
+            """;
+        using var stream = Utf8Stream(xml);
+
+        var document = new KmlTrackReader().Read(stream, "route.kml");
+
+        var waypoint = Assert.Single(document.Waypoints);
+        Assert.Equal("营地", waypoint.Name);
+        Assert.Equal("河边平台", waypoint.Description);
+        Assert.Equal(10d, waypoint.ElevationMeters);
     }
 
     [Fact]
@@ -112,6 +154,29 @@ public class TrackReaderTests
         Assert.Equal(210d, point.PowerWatts);
     }
 
+    [Fact]
+    public async Task TrackFileLoader_AcceptsWaypointOnlyGpx()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.gpx");
+        await System.IO.File.WriteAllTextAsync(path, """
+            <gpx version="1.1" creator="tests" xmlns="http://www.topografix.com/GPX/1/1">
+              <wpt lat="39.9" lon="116.3"><name>观景台</name></wpt>
+            </gpx>
+            """);
+
+        try
+        {
+            var document = await new TrackFileLoader().LoadAsync(path);
+
+            Assert.Equal(0, document.PointCount);
+            Assert.Single(document.Waypoints);
+        }
+        finally
+        {
+            System.IO.File.Delete(path);
+        }
+    }
+
     private static int ToSemicircles(double degrees) => (int)Math.Round(degrees / 180d * 2147483648d);
     private static MemoryStream Utf8Stream(string value) => new(Encoding.UTF8.GetBytes(value));
 }
@@ -163,6 +228,28 @@ public class CoordinateConverterTests
     {
         var result = CoordinateConverter.Gcj02ToWgs84(51.5074, -0.1278);
         Assert.Equal((51.5074, -0.1278), result);
+    }
+
+    [Fact]
+    public void ToWgs84_ConvertsWaypoints()
+    {
+        var document = new TrackDocument
+        {
+            Name = "test",
+            SourcePath = "test.gpx",
+            Format = TrackFileFormat.Gpx,
+            Segments = [],
+            Waypoints =
+            [
+                new TrackWaypoint { Latitude = 39.908823, Longitude = 116.397470, Name = "marker" }
+            ]
+        };
+
+        var converted = CoordinateConverter.ToWgs84(document, SourceCoordinateSystem.Gcj02);
+
+        var waypoint = Assert.Single(converted.Waypoints);
+        Assert.InRange(waypoint.Latitude, 39.906, 39.909);
+        Assert.InRange(waypoint.Longitude, 116.389, 116.393);
     }
 }
 

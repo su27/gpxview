@@ -13,6 +13,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 
 - 一次打开或拖放多个 `.gpx`、`.kml`、`.kmz`、`.fit`，拖到已有窗口会追加为多轨迹对比，也可从 Windows 文件资源管理器启动
 - 已打开轨迹以地图顶部标签呈现，可独立显示、隐藏和关闭；不同轨迹使用不同颜色，当前标签对应轨迹在地图上置顶，并独占摘要、海拔图与回放控制
+- 显示 GPX 标注点与 KML/KMZ 点地标；地图上保留名称标签，点击可查看说明、海拔和类型信息
 - 默认使用 OpenFreeMap 现代矢量地图，并可切换免 Key 户外矢量地图、OSM 经典、Esri 卫星、OpenTopoMap、OSM 人道主义；GitHub 版还可由用户配置天地图
 - 自动发现并加载多个互不重叠的本地 PMTiles 历史轨迹密度图层，并独立于底图统一显示或隐藏；矢量底图下路网图层保持在底图之上、用户轨迹之下
 - 可一键切换 2D/3D，使用在线 DEM 将底图和轨迹贴合到真实地形，并叠加海拔分层设色、山体阴影与随主题变化的地平线雾化
@@ -39,7 +40,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 构建出的 64 位 MSI 位于：
 
 ```text
-artifacts\installer\GpxView-0.2.3-win-x64.msi
+artifacts\installer\GpxView-0.2.4-win-x64.msi
 ```
 
 安装器将 GpxView 安装到 Program Files，创建开始菜单入口，并向 Windows 注册 GPX、KML、KMZ、FIT 的可选打开方式和“默认应用”能力；它不会在安装时抢占现有默认程序，也不创建桌面快捷方式。GitHub 版可在应用设置中为这些格式设为 GpxView；若 Windows 已用受保护的默认应用记录锁定其他程序，设置面板会改为打开系统确认入口。安装包包含 .NET 10 桌面运行时，终端用户无需另行安装 .NET。现代 Windows 通常已包含 Microsoft Edge WebView2 Runtime；若该组件缺失，应用会显示修复提示。
@@ -168,7 +169,7 @@ Store 发布目录是与商店包身份解耦的应用载荷。若 Partner Cente
 dotnet build installer\GpxView.Store.Installer.wixproj -c Release
 ```
 
-输出为 `artifacts\installer\GpxView-0.2.3-store-win-x64.msi`。该项目会在构建时再次拒绝任何包含 `MapServices.local.json` 的 Store 载荷。
+输出为 `artifacts\installer\GpxView-0.2.4-store-win-x64.msi`。该项目会在构建时再次拒绝任何包含 `MapServices.local.json` 的 Store 载荷。
 
 Microsoft Store 中已预留正式产品 `GpxView`，其公开包身份如下：
 
@@ -199,7 +200,7 @@ dotnet publish src\GpxView.App\GpxView.App.csproj -p:PublishProfile=win-x64
 dotnet build installer\GpxView.Installer.wixproj -c Release
 ```
 
-输出为 `artifacts\installer\GpxView-0.2.3-win-x64.msi`。
+输出为 `artifacts\installer\GpxView-0.2.4-win-x64.msi`。
 
 应用图标如需从可编辑源重新生成：
 

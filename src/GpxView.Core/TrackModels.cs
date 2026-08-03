@@ -34,14 +34,29 @@ public sealed record TrackSegment
     public required IReadOnlyList<TrackPoint> Points { get; init; }
 }
 
+public sealed record TrackWaypoint
+{
+    public required double Latitude { get; init; }
+    public required double Longitude { get; init; }
+    public double? ElevationMeters { get; init; }
+    public DateTimeOffset? Timestamp { get; init; }
+    public string? Name { get; init; }
+    public string? Comment { get; init; }
+    public string? Description { get; init; }
+    public string? Symbol { get; init; }
+    public string? Type { get; init; }
+}
+
 public sealed record TrackDocument
 {
     public required string Name { get; init; }
     public required string SourcePath { get; init; }
     public required TrackFileFormat Format { get; init; }
     public required IReadOnlyList<TrackSegment> Segments { get; init; }
+    public IReadOnlyList<TrackWaypoint> Waypoints { get; init; } = [];
 
     public int PointCount => Segments.Sum(segment => segment.Points.Count);
+    public int WaypointCount => Waypoints.Count;
 }
 
 public sealed record GeoBounds(double South, double West, double North, double East);

@@ -20,8 +20,10 @@ public sealed class GpxTrackReader : ITrackReader
 
         using var reader = XmlReader.Create(stream, settings);
         var segments = new List<TrackSegment>();
+        var waypoints = new List<TrackWaypoint>();
         List<TrackPoint>? currentPoints = null;
         PointBuilder? currentPoint = null;
+        WaypointBuilder? currentWaypoint = null;
         string? documentName = null;
         string? segmentName = null;
         var isRoute = false;
@@ -31,7 +33,20 @@ public sealed class GpxTrackReader : ITrackReader
             var localName = reader.LocalName;
             if (reader.NodeType == XmlNodeType.Element)
             {
-                if (localName is "trkseg" or "rte")
+                if (localName == "wpt")
+                {
+                    if (TryDouble(reader.GetAttribute("lat"), out var latitude)
+                        && TryDouble(reader.GetAttribute("lon"), out var longitude))
+                    {
+                        currentWaypoint = new WaypointBuilder(latitude, longitude);
+                        if (reader.IsEmptyElement)
+                        {
+                            waypoints.Add(currentWaypoint.Build());
+                            currentWaypoint = null;
+                        }
+                    }
+                }
+                else if (localName is "trkseg" or "rte")
                 {
                     FinishSegment(segments, ref currentPoints, ref segmentName);
                     currentPoints = [];
@@ -55,6 +70,10 @@ public sealed class GpxTrackReader : ITrackReader
                 {
                     ReadPointValue(reader, currentPoint, localName);
                 }
+                else if (currentWaypoint is not null && !reader.IsEmptyElement)
+                {
+                    ReadWaypointValue(reader, currentWaypoint, localName);
+                }
                 else if (localName == "name" && !reader.IsEmptyElement)
                 {
                     var name = reader.ReadString().Trim();
@@ -68,6 +87,11 @@ public sealed class GpxTrackReader : ITrackReader
                 {
                     if (currentPoint is not null) currentPoints?.Add(currentPoint.Build());
                     currentPoint = null;
+                }
+                else if (localName == "wpt")
+                {
+                    if (currentWaypoint is not null) waypoints.Add(currentWaypoint.Build());
+                    currentWaypoint = null;
                 }
                 else if (localName is "trkseg" or "rte")
                 {
@@ -83,7 +107,8 @@ public sealed class GpxTrackReader : ITrackReader
             Name = string.IsNullOrWhiteSpace(documentName) ? Path.GetFileNameWithoutExtension(sourcePath) : documentName,
             SourcePath = sourcePath,
             Format = Format,
-            Segments = segments
+            Segments = segments,
+            Waypoints = waypoints
         };
     }
 
@@ -105,12 +130,32 @@ public sealed class GpxTrackReader : ITrackReader
         }
     }
 
+    private static void ReadWaypointValue(XmlReader reader, WaypointBuilder waypoint, string localName)
+    {
+        if (localName is not ("ele" or "time" or "name" or "cmt" or "desc" or "sym" or "type"))
+            return;
+
+        var value = reader.ReadString().Trim();
+        switch (localName)
+        {
+            case "ele" when TryDouble(value, out var elevation): waypoint.Elevation = elevation; break;
+            case "time" when DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var time): waypoint.Timestamp = time; break;
+            case "name": waypoint.Name = CleanString(value); break;
+            case "cmt": waypoint.Comment = CleanString(value); break;
+            case "desc": waypoint.Description = CleanString(value); break;
+            case "sym": waypoint.Symbol = CleanString(value); break;
+            case "type": waypoint.Type = CleanString(value); break;
+        }
+    }
+
     private static void FinishSegment(List<TrackSegment> segments, ref List<TrackPoint>? points, ref string? name)
     {
         if (points is { Count: > 0 }) segments.Add(new TrackSegment { Name = name, Points = points });
         points = null;
         name = null;
     }
+
+    private static string? CleanString(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static bool TryDouble(string? value, out double result) =>
         double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out result);
@@ -136,6 +181,30 @@ public sealed class GpxTrackReader : ITrackReader
             CadenceRpm = Cadence,
             PowerWatts = Power,
             TemperatureCelsius = Temperature
+        };
+    }
+
+    private sealed class WaypointBuilder(double latitude, double longitude)
+    {
+        public double? Elevation { get; set; }
+        public DateTimeOffset? Timestamp { get; set; }
+        public string? Name { get; set; }
+        public string? Comment { get; set; }
+        public string? Description { get; set; }
+        public string? Symbol { get; set; }
+        public string? Type { get; set; }
+
+        public TrackWaypoint Build() => new()
+        {
+            Latitude = latitude,
+            Longitude = longitude,
+            ElevationMeters = Elevation,
+            Timestamp = Timestamp,
+            Name = Name,
+            Comment = Comment,
+            Description = Description,
+            Symbol = Symbol,
+            Type = Type
         };
     }
 }
