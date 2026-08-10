@@ -27,6 +27,7 @@ public partial class MainWindow
     private readonly SemaphoreSlim remoteRoadNetworkGate = new(1, 1);
     private readonly RoadNetworkRangeCache roadNetworkRangeCache = new(AppPaths.RoadNetworkCacheFolder);
     private RoadNetworkServiceClient? roadNetworkServiceClient;
+    private Uri? pendingRoadNetworkEndpointMigrationSource;
     private string remoteRoadNetworkStatus = "disconnected";
     private string remoteRoadNetworkError = string.Empty;
     private bool remoteRoadNetworkBusy;
@@ -44,7 +45,7 @@ public partial class MainWindow
     {
         if (string.IsNullOrWhiteSpace(appSettings.RoadNetworkServiceEndpoint)) return;
         if (!RoadNetworkServiceClient.TryNormalizeEndpoint(
-                appSettings.RoadNetworkServiceEndpoint, out var endpoint))
+                appSettings.RoadNetworkServiceEndpoint, out var configuredEndpoint))
         {
             remoteRoadNetworkStatus = "invalidEndpoint";
             return;
@@ -52,8 +53,13 @@ public partial class MainWindow
 
         try
         {
+            var endpoint = RoadNetworkServiceEndpoints.Resolve(configuredEndpoint);
             var token = roadNetworkCredentialStore.Value.ReadDeviceToken(endpoint);
+            if (token is null && endpoint != configuredEndpoint)
+                token = roadNetworkCredentialStore.Value.ReadDeviceToken(configuredEndpoint);
             if (string.IsNullOrWhiteSpace(token)) return;
+            if (endpoint != configuredEndpoint)
+                pendingRoadNetworkEndpointMigrationSource = configuredEndpoint;
             roadNetworkServiceClient = new RoadNetworkServiceClient(endpoint, token);
             remoteRoadNetworkStatus = "connecting";
         }
@@ -474,6 +480,7 @@ public partial class MainWindow
             try
             {
                 var catalog = await serviceClient.GetCatalogAsync(lifetimeCancellation.Token);
+                CompleteRoadNetworkEndpointMigration(serviceClient);
                 ApplyRemoteRoadNetworkCatalog(serviceClient.Endpoint, catalog, notifyWeb);
                 remoteRoadNetworkStatus = "connected";
             }
@@ -483,7 +490,7 @@ public partial class MainWindow
                                                    or RoadNetworkServiceException)
             {
                 remoteRoadNetworkStatus = exception is RoadNetworkServiceException
-                    { StatusCode: HttpStatusCode.Unauthorized }
+                { StatusCode: HttpStatusCode.Unauthorized }
                     ? "authenticationFailed"
                     : "error";
                 remoteRoadNetworkError = exception is RoadNetworkServiceException serviceException
@@ -521,6 +528,7 @@ public partial class MainWindow
                 remoteRoadNetworkStatus = "invalidEndpoint";
                 return;
             }
+            endpoint = RoadNetworkServiceEndpoints.Resolve(endpoint);
             appSettings = appSettings with { RoadNetworkServiceEndpoint = endpoint.AbsoluteUri };
             appSettingsStore.Save(appSettings);
             if (string.IsNullOrWhiteSpace(enrollmentCode))
@@ -543,11 +551,15 @@ public partial class MainWindow
 
                 var previousClient = roadNetworkServiceClient;
                 var previousEndpoint = previousClient?.Endpoint;
+                var migrationSourceEndpoint = pendingRoadNetworkEndpointMigrationSource;
                 roadNetworkServiceClient = nextClient;
                 nextClient = null!;
+                pendingRoadNetworkEndpointMigrationSource = null;
                 previousClient?.Dispose();
                 if (previousEndpoint is not null && previousEndpoint != endpoint)
                     roadNetworkCredentialStore.Value.DeleteDeviceToken(previousEndpoint);
+                if (migrationSourceEndpoint is not null && migrationSourceEndpoint != endpoint)
+                    roadNetworkCredentialStore.Value.DeleteDeviceToken(migrationSourceEndpoint);
 
                 appSettings = appSettings with
                 {
@@ -622,6 +634,11 @@ public partial class MainWindow
             {
                 roadNetworkCredentialStore.Value.DeleteDeviceToken(endpoint);
             }
+            if (pendingRoadNetworkEndpointMigrationSource is { } migrationSourceEndpoint)
+            {
+                roadNetworkCredentialStore.Value.DeleteDeviceToken(migrationSourceEndpoint);
+                pendingRoadNetworkEndpointMigrationSource = null;
+            }
 
             appSettings = appSettings with
             {
@@ -660,9 +677,11 @@ public partial class MainWindow
         remoteRoadNetworkArchives.Clear();
         remoteRoadNetworkArchivesByPath.Clear();
         remoteRoadNetworkCatalog.Clear();
+        var datasetIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var archive in catalog)
         {
-            if (!TryCreateRemoteRoadNetworkArchive(endpoint, archive, remoteRoadNetworkCatalog.Count, out var entry))
+            if (!TryCreateRemoteRoadNetworkArchive(endpoint, archive, out var entry)
+                || !datasetIds.Add(entry.DatasetId))
                 continue;
             remoteRoadNetworkCatalog.Add(entry);
         }
@@ -673,10 +692,53 @@ public partial class MainWindow
         SendRoadNetworkMode();
     }
 
+    private void CompleteRoadNetworkEndpointMigration(RoadNetworkServiceClient serviceClient)
+    {
+        if (pendingRoadNetworkEndpointMigrationSource is not { } sourceEndpoint) return;
+
+        try
+        {
+            var targetEndpoint = serviceClient.Endpoint;
+            roadNetworkCredentialStore.Value.SaveDeviceToken(targetEndpoint, serviceClient.GetDeviceToken());
+            var migratedSettings = appSettings with
+            {
+                RoadNetworkServiceEndpoint = targetEndpoint.AbsoluteUri
+            };
+            appSettingsStore.Save(migratedSettings);
+            var persistedSettings = appSettingsStore.Load();
+            if (!string.Equals(
+                    persistedSettings.RoadNetworkServiceEndpoint,
+                    targetEndpoint.AbsoluteUri,
+                    StringComparison.OrdinalIgnoreCase)) return;
+
+            appSettings = migratedSettings;
+            pendingRoadNetworkEndpointMigrationSource = null;
+        }
+        catch (Exception exception) when (exception is InvalidOperationException
+                                               or UnauthorizedAccessException
+                                               or System.ComponentModel.Win32Exception
+                                               or System.Runtime.InteropServices.COMException)
+        {
+            // Keep the old settings and credential so a failed migration can be retried safely.
+            return;
+        }
+
+        try
+        {
+            roadNetworkCredentialStore.Value.DeleteDeviceToken(sourceEndpoint);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException
+                                               or UnauthorizedAccessException
+                                               or System.ComponentModel.Win32Exception
+                                               or System.Runtime.InteropServices.COMException)
+        {
+            // The verified target credential is already durable; stale-source cleanup is best effort.
+        }
+    }
+
     private static bool TryCreateRemoteRoadNetworkArchive(
         Uri endpoint,
         RoadNetworkCatalogArchive archive,
-        int index,
         out RemoteRoadNetworkArchive entry)
     {
         entry = null!;
@@ -696,7 +758,7 @@ public partial class MainWindow
             ? $"bytes:{archive.Bytes}"
             : archive.Etag.Trim();
         entry = new RemoteRoadNetworkArchive(
-            $"remote-{index}",
+            RoadNetworkArchiveSelection.RemoteRequestId(archive.Id),
             archive.Id,
             archive.Name ?? new Dictionary<string, string>(),
             archiveUri.PathAndQuery,
@@ -734,17 +796,13 @@ public partial class MainWindow
         remoteRoadNetworkArchivesByPath.Clear();
         foreach (var entry in remoteRoadNetworkCatalog)
         {
-            if (roadNetworkArchives.Any(local => BoundsOverlap(
-                    [local.Archive.West, local.Archive.South, local.Archive.East, local.Archive.North],
-                    entry.Bounds))) continue;
+            if (RoadNetworkArchiveSelection.IsRemoteDatasetProvidedLocally(
+                    roadNetworkArchives.Select(local => local.Archive.Path),
+                    entry.DatasetId)) continue;
             remoteRoadNetworkArchives.Add(entry);
             remoteRoadNetworkArchivesByPath.Add($"/archives/{entry.RequestId}", entry);
         }
     }
-
-    private static bool BoundsOverlap(double[] left, double[] right) =>
-        left[0] < right[2] && left[2] > right[0]
-        && left[1] < right[3] && left[3] > right[1];
 
     private async Task ClearRoadNetworkCacheAsync()
     {
@@ -828,6 +886,7 @@ public partial class MainWindow
         Path.GetFileNameWithoutExtension(path) switch
         {
             "beijing-density" => T("RoadNetwork.Beijing"),
+            "hebei-density" => T("RoadNetwork.Hebei"),
             "mentougou-density" => T("RoadNetwork.Mentougou"),
             var fileName => fileName
         };

@@ -210,7 +210,7 @@
 </div>
 <script>
   const fallbackStrings={
-    'Web.CompassNorth':'当前朝向：正北；点击回到正北','Web.CompassBearing':'当前朝向：{0} {1}°；点击回到正北','Web.North':'北','Web.NorthEast':'东北','Web.East':'东','Web.SouthEast':'东南','Web.South':'南','Web.SouthWest':'西南','Web.West':'西','Web.NorthWest':'西北','Web.NoData':'暂无数据','Web.TrackSummary':'轨迹摘要','Place.Recognizing':'正在识别地点…','Place.Unavailable':'地点暂不可用','Web.HideDetails':'隐藏详细信息（Tab）','Web.ShowDetails':'显示详细信息（Tab）','Web.Play':'播放轨迹','Web.Pause':'暂停轨迹回放','Web.Elevation':'海拔','Web.Slope':'坡度','Web.Speed':'速度','Web.HeartRate':'心率','Web.Power':'功率','Web.Waypoint':'标注点','Web.WaypointElevation':'海拔 {0} m','Web.NoElevation':'无海拔数据','Web.PlaceUnknown':'地点尚未识别','Web.UntitledTrack':'未命名轨迹','Web.RoadAttribution':'本地历史轨迹密度'
+    'Web.CompassNorth':'当前朝向：正北；点击回到正北','Web.CompassBearing':'当前朝向：{0} {1}°；点击回到正北','Web.North':'北','Web.NorthEast':'东北','Web.East':'东','Web.SouthEast':'东南','Web.South':'南','Web.SouthWest':'西南','Web.West':'西','Web.NorthWest':'西北','Web.NoData':'暂无数据','Web.TrackSummary':'轨迹摘要','Place.Recognizing':'正在识别地点…','Place.Unavailable':'地点暂不可用','Web.HideDetails':'隐藏详细信息（Tab）','Web.ShowDetails':'显示详细信息（Tab）','Web.Play':'播放轨迹','Web.Pause':'暂停轨迹回放','Web.Elevation':'海拔','Web.Slope':'坡度','Web.Speed':'速度','Web.HeartRate':'心率','Web.Power':'功率','Web.Waypoint':'标注点','Web.WaypointElevation':'海拔 {0} m','Web.DistanceFromStart':'距起点 {0}','Web.NoElevation':'无海拔数据','Web.PlaceUnknown':'地点尚未识别','Web.UntitledTrack':'未命名轨迹','Web.RoadAttribution':'本地历史轨迹密度'
   };
   let locale='zh-CN',localizedStrings={};
   function t(key,...values){let text=localizedStrings[key]??fallbackStrings[key]??key;values.forEach((value,index)=>text=text.replaceAll(`{${index}}`,String(value)));return text}
@@ -311,7 +311,7 @@
   };
   const selectedOverlays=new Set();
   const loadedTracks=new Map();
-  let activeTrackId=null,profile=[],styleReady=false,styleMode=openFreeMapId,activeBaseMap=openFreeMapId,darkTheme=false,availableSeries={},availableTrackColors={},trackColorMode='uniform';
+  let activeTrackId=null,profile=[],chartWaypoints=[],chartWaypointHitAreas=[],styleReady=false,styleMode=openFreeMapId,activeBaseMap=openFreeMapId,darkTheme=false,availableSeries={},availableTrackColors={},trackColorMode='uniform';
   let terrainEnabled=false,terrainResourcesPromise=null,contourDemSource=null,terrainAnimateOnReady=false,styleGeneration=0,roadNetworkEnabled=roadNetworkAvailable&&roadNetworkConfig.enabled!==false,roadNetworkInitialFit=false;
   let trackData=featureCollection([]),trackColorData=featureCollection([]),waypointData=featureCollection([]),endData=featureCollection([]),hoverData=featureCollection([]),playbackData=featureCollection([]),pendingFit=false,trackHasChartData=false;
   let currentRecentEntries=[],settingsState={language:'system',resolvedLocale:'zh-CN',geocodingAvailable:true,geocodingEnabled:false,geocodingConsentPending:false,version:'',channel:'GitHub',fileAssociations:[],roadNetworks:[],roadNetworkCache:{visible:false,bytes:0,entries:0,busy:false}};
@@ -587,6 +587,41 @@
   function activeTrack(){return activeTrackId?loadedTracks.get(activeTrackId):null}
   function waypointLabel(waypoint){return waypoint?.name||waypoint?.comment||waypoint?.symbol||waypoint?.type||''}
   function waypointTitle(waypoint,index){return waypointLabel(waypoint)||`${t('Web.Waypoint')} ${index+1}`}
+  function projectWaypointsToProfile(waypoints){
+    if(!profile.length)return[];
+    const projected=[];
+    (waypoints||[]).forEach((waypoint,waypointIndex)=>{
+      const longitude=Number(waypoint.longitude),latitude=Number(waypoint.latitude);if(!Number.isFinite(longitude)||!Number.isFinite(latitude))return;
+      const longitudeScale=Math.max(.01,Math.cos(latitude*Math.PI/180));let bestDistance=Infinity,bestPosition=-1,bestElevation=null,bestDistanceKm=null;
+      for(let index=0;index<profile.length;index++){
+        const first=profile[index];if(!Number.isFinite(first.longitude)||!Number.isFinite(first.latitude))continue;
+        const second=profile[index+1];let ratio=0,projectedLongitude=first.longitude,projectedLatitude=first.latitude;
+        if(second&&first.segmentIndex===second.segmentIndex&&Number.isFinite(second.longitude)&&Number.isFinite(second.latitude)){
+          const dx=(second.longitude-first.longitude)*longitudeScale,dy=second.latitude-first.latitude,lengthSquared=dx*dx+dy*dy;
+          if(lengthSquared>0)ratio=Math.max(0,Math.min(1,((longitude-first.longitude)*longitudeScale*dx+(latitude-first.latitude)*dy)/lengthSquared));
+          projectedLongitude=first.longitude+(second.longitude-first.longitude)*ratio;projectedLatitude=first.latitude+(second.latitude-first.latitude)*ratio
+        }
+        const offsetX=(longitude-projectedLongitude)*longitudeScale,offsetY=latitude-projectedLatitude,distance=offsetX*offsetX+offsetY*offsetY;
+        if(distance>=bestDistance)continue;
+        bestDistance=distance;bestPosition=index+ratio;
+        const firstElevation=first.elevationMeters,secondElevation=second?.elevationMeters;
+        bestElevation=Number.isFinite(firstElevation)&&Number.isFinite(secondElevation)?firstElevation+(secondElevation-firstElevation)*ratio:Number.isFinite(firstElevation)?firstElevation:null;
+        const firstDistanceKm=first.distanceKm,secondDistanceKm=second?.distanceKm;
+        bestDistanceKm=Number.isFinite(firstDistanceKm)&&Number.isFinite(secondDistanceKm)?firstDistanceKm+(secondDistanceKm-firstDistanceKm)*ratio:Number.isFinite(firstDistanceKm)?firstDistanceKm:null
+      }
+      if(bestPosition>=0)projected.push({waypoint,waypointIndex,position:bestPosition,profileIndex:Math.max(0,Math.min(profile.length-1,Math.round(bestPosition))),distanceKm:bestDistanceKm,elevationMeters:bestElevation,title:waypointTitle(waypoint,waypointIndex)})
+    });
+    return projected.sort((first,second)=>first.position-second.position)
+  }
+  function formatWaypointDistance(distanceKm){return distanceKm<1?`${Math.round(distanceKm*1000)} m`:`${distanceKm.toFixed(2)} km`}
+  function chartWaypointElevation(marker){const raw=marker.waypoint.elevationMeters,value=raw===null||raw===undefined?null:Number(raw);return Number.isFinite(value)?value:marker.elevationMeters}
+  function chartWaypointDistanceFromStart(marker){const distance=Number.isFinite(marker.distanceKm)?marker.distanceKm:profile[marker.profileIndex]?.distanceKm;return Math.max(0,(distance||0)-(profile[0]?.distanceKm||0))}
+  function chartWaypointDetailValues(marker){const elevation=chartWaypointElevation(marker);return[Number.isFinite(elevation)?t('Web.WaypointElevation',Math.round(elevation)):t('Web.NoElevation'),t('Web.DistanceFromStart',formatWaypointDistance(chartWaypointDistanceFromStart(marker)))]}
+  function fitCanvasText(ctx,value,maximumWidth){
+    const characters=[...String(value)];if(ctx.measureText(value).width<=maximumWidth)return String(value);
+    let low=0,high=characters.length;while(low<high){const middle=Math.ceil((low+high)/2),candidate=characters.slice(0,middle).join('')+'…';if(ctx.measureText(candidate).width<=maximumWidth)low=middle;else high=middle-1}return characters.slice(0,low).join('')+'…'
+  }
+  function rectanglesOverlap(first,second){return first.x<second.x+second.width&&first.x+first.width>second.x&&first.y<second.y+second.height&&first.y+first.height>second.y}
   function showWaypointPopup(feature){
     const properties=feature.properties||{},content=document.createElement('div');content.className='waypointPopup';
     const title=document.createElement('div');title.className='waypointPopupTitle';title.textContent=properties.title||t('Web.Waypoint');content.append(title);
@@ -790,11 +825,11 @@
     endData=featureCollection(endpoints)
   }
   function clearTrackDetails(){
-    pausePlayback();waypointPopup.remove();activeTrackId=null;profile=[];trackData=featureCollection([]);trackColorData=featureCollection([]);waypointData=featureCollection([]);endData=featureCollection([]);hoverData=featureCollection([]);playbackData=featureCollection([]);summaryPanel.hidden=true;summaryMetrics.hidden=true;detailsToggle.hidden=true;chartPanel.hidden=true;playbackBar.hidden=true;trackColorLegend.hidden=true;document.body.classList.remove('chart-visible','compact-chart');meta.textContent=t('Web.NoData');renderTrackTabs();applyOverlayData();renderChart()
+    pausePlayback();waypointPopup.remove();activeTrackId=null;profile=[];chartWaypoints=[];chartWaypointHitAreas=[];trackData=featureCollection([]);trackColorData=featureCollection([]);waypointData=featureCollection([]);endData=featureCollection([]);hoverData=featureCollection([]);playbackData=featureCollection([]);summaryPanel.hidden=true;summaryMetrics.hidden=true;detailsToggle.hidden=true;chartPanel.hidden=true;playbackBar.hidden=true;trackColorLegend.hidden=true;document.body.classList.remove('chart-visible','compact-chart');meta.textContent=t('Web.NoData');renderTrackTabs();applyOverlayData();renderChart()
   }
   function activateTrack(id){
     const track=loadedTracks.get(id);if(!track){if(!loadedTracks.size)clearTrackDetails();return}
-    pausePlayback();waypointPopup.remove();activeTrackId=id;profile=track.profile||[];computeProfileSlopes();trackColorData=featureCollection([]);hoverData=featureCollection([]);playbackData=featureCollection([]);document.getElementById('summaryTitle').textContent=track.name||track.fileName||t('Web.TrackSummary');updateSummary(track.summary);setPlaceName(track.placeName||t('Place.Recognizing'));summaryPanel.hidden=false;detailsToggle.hidden=false;setRecentPanelVisible(false);
+    pausePlayback();waypointPopup.remove();activeTrackId=id;profile=track.profile||[];computeProfileSlopes();chartWaypoints=projectWaypointsToProfile(track.waypoints);trackColorData=featureCollection([]);hoverData=featureCollection([]);playbackData=featureCollection([]);document.getElementById('summaryTitle').textContent=track.name||track.fileName||t('Web.TrackSummary');updateSummary(track.summary);setPlaceName(track.placeName||t('Place.Recognizing'));summaryPanel.hidden=false;detailsToggle.hidden=false;setRecentPanelVisible(false);
     trackHasChartData=refreshSeriesControls();rebuildTrackMapData();refreshTrackColorControls();const hasPlayback=profile.length>1,playbackOnly=!trackHasChartData&&hasPlayback;chartPanel.hidden=!trackHasChartData&&!hasPlayback;chartPanel.classList.toggle('playback-only',playbackOnly);document.body.classList.toggle('chart-visible',!chartPanel.hidden);document.body.classList.toggle('compact-chart',playbackOnly);preparePlayback();renderTrackTabs();applyOverlayData();renderChart(playback.currentIndex)
   }
   function setTracks(data){
@@ -805,8 +840,8 @@
   function removeTrack(id,nextActiveTrackId){loadedTracks.delete(id);if(!loadedTracks.size){clearTrackDetails();return}const next=loadedTracks.has(nextActiveTrackId)?nextActiveTrackId:loadedTracks.keys().next().value;activateTrack(next)}
   function resizeCanvas(){const r=canvas.getBoundingClientRect(),d=devicePixelRatio||1;canvas.width=Math.max(1,Math.round(r.width*d));canvas.height=Math.max(1,Math.round(r.height*d));return{ctx:canvas.getContext('2d'),w:r.width,h:r.height,d}}
   function rangeFor(key){const definition=seriesDefinitions[key],values=profile.map(point=>point[definition.field]).filter(Number.isFinite);let min=Math.min(...values),max=Math.max(...values);if(key==='elevation'){min=Math.floor(min/10)*10;max=Math.ceil(max/10)*10}if(min===max){const delta=Math.max(1,Math.abs(min)*.05);min-=delta;max+=delta}else{const padding=(max-min)*.06;min-=padding;max+=padding}return{min,max}}
-  function renderChart(active=-1){
-    const {ctx,w,h,d}=resizeCanvas();ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,w,h);const pad={l:48,r:16,t:10,b:24},keys=activeSeries();if(!keys.length)return;
+  function renderChart(active=-1,activeWaypoint=null){
+    const {ctx,w,h,d}=resizeCanvas();ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,w,h);chartWaypointHitAreas=[];const pad={l:48,r:16,t:10,b:24},keys=activeSeries();if(!keys.length)return;
     const ranges={};keys.forEach(key=>ranges[key]=rangeFor(key));const baseKey=keys[0],baseDefinition=seriesDefinitions[baseKey],baseRange=ranges[baseKey];
     const x=index=>pad.l+index/Math.max(1,profile.length-1)*(w-pad.l-pad.r),y=(key,value)=>pad.t+(ranges[key].max-value)/(ranges[key].max-ranges[key].min)*(h-pad.t-pad.b);
     ctx.strokeStyle=darkTheme?'#454545':'#dfe3e7';ctx.fillStyle=darkTheme?'#aaa':'#6f7479';ctx.lineWidth=1;ctx.font='10px Segoe UI';for(let i=0;i<3;i++){const value=baseRange.max-(baseRange.max-baseRange.min)*i/2,yy=y(baseKey,value);ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(w-pad.r,yy);ctx.stroke();ctx.fillText(`${value.toFixed(baseDefinition.decimals)} ${baseDefinition.unit}`,2,yy+4)}
@@ -814,8 +849,22 @@
     keys.forEach(key=>{const definition=seriesDefinitions[key];ctx.beginPath();let drawing=false;profile.forEach((point,index)=>{const value=point[definition.field];if(!Number.isFinite(value)){drawing=false;return}const xx=x(index),yy=y(key,value);drawing?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy);drawing=true});ctx.strokeStyle=definition.color;ctx.lineWidth=key==='elevation'?2:1.8;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke()});
     const total=profile.at(-1)?.distanceKm||0,plotWidth=w-pad.l-pad.r,intervals=Math.max(2,Math.min(6,Math.floor(plotWidth/140)));ctx.font='10px Segoe UI';for(let i=0;i<=intervals;i++){const ratio=i/intervals,xx=pad.l+ratio*plotWidth,value=total*ratio;ctx.strokeStyle=darkTheme?'#666':'#aeb4ba';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xx,h-pad.b);ctx.lineTo(xx,h-pad.b+4);ctx.stroke();ctx.fillStyle=darkTheme?'#aaa':'#6f7479';ctx.textAlign=i===0?'left':i===intervals?'right':'center';ctx.fillText(value.toFixed(total<10?1:0)+' km',xx,h-5)}ctx.textAlign='left';
     if(active>=0){const point=profile[active],xx=x(active);ctx.strokeStyle=darkTheme?'#d7dadd':'#555b61';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xx,pad.t);ctx.lineTo(xx,h-pad.b);ctx.stroke();keys.forEach(key=>{const definition=seriesDefinitions[key],value=point[definition.field];if(!Number.isFinite(value))return;ctx.fillStyle=definition.color;ctx.beginPath();ctx.arc(xx,y(key,value),3.5,0,Math.PI*2);ctx.fill();ctx.strokeStyle=darkTheme?'#222':'#fff';ctx.lineWidth=1.5;ctx.stroke()})}
+    const waypointColor=activeTrack()?.color||'#176bde',occupiedLabels=[];
+    const waypointLayouts=chartWaypoints.map(marker=>({marker,xx:x(marker.position),anchorY:keys.includes('elevation')&&Number.isFinite(marker.elevationMeters)?Math.max(pad.t+13,Math.min(h-pad.b,y('elevation',marker.elevationMeters))):pad.t+13,highlighted:marker===activeWaypoint}));
+    waypointLayouts.forEach(layout=>{const {xx,anchorY,highlighted}=layout;ctx.save();ctx.strokeStyle=waypointColor;ctx.globalAlpha=highlighted ? .7 : .3;ctx.lineWidth=highlighted?1.5:1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(xx,pad.t);ctx.lineTo(xx,anchorY);ctx.stroke();ctx.restore();const radius=highlighted?5.2:4.5,centerY=anchorY-radius-3;ctx.fillStyle=waypointColor;ctx.beginPath();ctx.moveTo(xx,anchorY);ctx.bezierCurveTo(xx-radius*.85,anchorY-radius*.9,xx-radius,centerY,xx,centerY-radius);ctx.bezierCurveTo(xx+radius,centerY,xx+radius*.85,anchorY-radius*.9,xx,anchorY);ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(xx,centerY-radius*.25,radius*.3,0,Math.PI*2);ctx.fill()});
+    ctx.textBaseline='middle';waypointLayouts.forEach((layout,index)=>{
+      const horizontalInset=layout.highlighted?4:pad.l,availableWidth=Math.max(80,w-horizontalInset-(layout.highlighted?4:pad.r));
+      ctx.font='600 10px Segoe UI';const text=fitCanvasText(ctx,layout.marker.title,Math.min(layout.highlighted?270:116,availableWidth-10)),titleWidth=ctx.measureText(text).width;
+      ctx.font='9px Segoe UI';let detailLines=[];
+      if(layout.highlighted){const detailValues=chartWaypointDetailValues(layout.marker),combined=detailValues.join(' · ');detailLines=ctx.measureText(combined).width<=availableWidth-10?[combined]:detailValues}
+      const detailWidth=detailLines.reduce((maximum,line)=>Math.max(maximum,ctx.measureText(line).width),0),labelWidth=Math.min(availableWidth,Math.ceil(Math.max(titleWidth,detailWidth))+10),labelHeight=17+detailLines.length*14,aboveY=layout.anchorY-(layout.highlighted?14:12)-labelHeight;
+      const candidates=[{x:layout.xx-labelWidth/2,y:aboveY},{x:layout.xx+8,y:layout.anchorY-labelHeight-5},{x:layout.xx-labelWidth-8,y:layout.anchorY-labelHeight-5},{x:layout.xx-labelWidth/2,y:layout.anchorY+4}].map(candidate=>({x:Math.max(horizontalInset,Math.min(w-(layout.highlighted?4:pad.r)-labelWidth,candidate.x)),y:Math.max(pad.t,Math.min(h-pad.b-labelHeight,candidate.y)),width:labelWidth,height:labelHeight}));
+      const labelRect=candidates.find(candidate=>!occupiedLabels.some(existing=>rectanglesOverlap(candidate,existing)))||candidates[index%candidates.length];occupiedLabels.push(labelRect);ctx.fillStyle=darkTheme?'rgba(38,42,40,.92)':'rgba(255,255,255,.94)';ctx.fillRect(labelRect.x,labelRect.y,labelRect.width,labelRect.height);ctx.strokeStyle=waypointColor;ctx.globalAlpha=layout.highlighted?1:.72;ctx.lineWidth=1;ctx.strokeRect(labelRect.x+.5,labelRect.y+.5,labelRect.width-1,labelRect.height-1);ctx.globalAlpha=1;ctx.font='600 10px Segoe UI';ctx.fillStyle=darkTheme?'#f3f5f4':'#2d3338';ctx.fillText(text,labelRect.x+5,labelRect.y+(layout.highlighted?9:labelRect.height/2+.5));
+      if(layout.highlighted){ctx.font='9px Segoe UI';ctx.fillStyle=darkTheme?'#c8cecb':'#626a70';detailLines.forEach((line,lineIndex)=>ctx.fillText(line,labelRect.x+5,labelRect.y+23+lineIndex*14))}
+      chartWaypointHitAreas.push({marker:layout.marker,x:layout.xx,labelRect})
+    });ctx.textBaseline='alphabetic';ctx.textAlign='left'
   }
-  canvas.addEventListener('pointermove',event=>{if(!profile.length)return;if(playback.playing)pausePlayback();const rect=canvas.getBoundingClientRect(),left=48,right=16,ratio=Math.max(0,Math.min(1,(event.clientX-rect.left-left)/(rect.width-left-right))),index=Math.round(ratio*(profile.length-1)),point=profile[index];renderChart(index);const values=activeSeries().filter(key=>Number.isFinite(point[seriesDefinitions[key].field])).map(key=>formatSeriesValue(key,point[seriesDefinitions[key].field]));meta.textContent=`${point.distanceKm.toFixed(2)} km${values.length?' · '+values.join(' · '):''}`;hoverData=activeTrack()?.visible?featureCollection([{type:'Feature',properties:{},geometry:{type:'Point',coordinates:[point.longitude,point.latitude]}}]):featureCollection([]);if(styleReady)map.getSource('gpxview-hover')?.setData(hoverData)});
+  canvas.addEventListener('pointermove',event=>{if(!profile.length)return;if(playback.playing)pausePlayback();const rect=canvas.getBoundingClientRect(),left=48,right=16,plotWidth=Math.max(1,rect.width-left-right),canvasX=event.clientX-rect.left,canvasY=event.clientY-rect.top,ratio=Math.max(0,Math.min(1,(canvasX-left)/plotWidth)),index=Math.round(ratio*(profile.length-1)),point=profile[index];let nearestWaypoint=chartWaypointHitAreas.find(area=>canvasX>=area.labelRect.x&&canvasX<=area.labelRect.x+area.labelRect.width&&canvasY>=area.labelRect.y&&canvasY<=area.labelRect.y+area.labelRect.height)?.marker||null,nearestWaypointDistance=Infinity;if(!nearestWaypoint){chartWaypointHitAreas.forEach(area=>{const distance=Math.abs(area.x-canvasX);if(distance<nearestWaypointDistance){nearestWaypointDistance=distance;nearestWaypoint=area.marker}});if(nearestWaypointDistance>9)nearestWaypoint=null}renderChart(index,nearestWaypoint);const values=activeSeries().filter(key=>Number.isFinite(point[seriesDefinitions[key].field])).map(key=>formatSeriesValue(key,point[seriesDefinitions[key].field]));meta.textContent=`${point.distanceKm.toFixed(2)} km${values.length?' · '+values.join(' · '):''}`;if(nearestWaypoint){const waypoint=nearestWaypoint.waypoint;hoverData=activeTrack()?.visible?featureCollection([{type:'Feature',properties:{},geometry:{type:'Point',coordinates:[Number(waypoint.longitude),Number(waypoint.latitude)]}}]):featureCollection([])}else hoverData=activeTrack()?.visible?featureCollection([{type:'Feature',properties:{},geometry:{type:'Point',coordinates:[point.longitude,point.latitude]}}]):featureCollection([]);if(styleReady)map.getSource('gpxview-hover')?.setData(hoverData)});
   canvas.addEventListener('pointerleave',()=>{renderChart(playback.currentIndex);if(playback.currentIndex>=0)updatePlaybackReadout(playback.currentIndex);else meta.textContent=profile.length?`${(profile.at(-1)?.distanceKm||0).toFixed(2)} km`:t('Web.NoData');hoverData=featureCollection([]);if(styleReady)map.getSource('gpxview-hover')?.setData(hoverData)});
   addEventListener('resize',()=>renderChart());
   gpxHost.onMessage(data=>{

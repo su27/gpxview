@@ -15,7 +15,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 - 已打开轨迹以地图顶部标签呈现，可独立显示、隐藏和关闭；不同轨迹使用不同颜色，当前标签对应轨迹在地图上置顶，并独占摘要、海拔图与回放控制
 - 显示 GPX 标注点与 KML/KMZ 点地标；地图上保留名称标签，点击可查看说明、海拔和类型信息
 - 默认使用 OpenFreeMap 现代矢量地图，并可切换免 Key 户外矢量地图、OSM 经典、Esri 卫星、OpenTopoMap、OSM 人道主义；GitHub 版还可由用户配置天地图
-- 自动发现并加载多个互不重叠的本地 PMTiles 历史轨迹密度图层，并独立于底图统一显示或隐藏；矢量底图下路网图层保持在底图之上、用户轨迹之下
+- 自动发现并加载多个本地或远程 PMTiles 历史轨迹密度图层，并独立于底图统一显示或隐藏；矢量底图下路网图层保持在底图之上、用户轨迹之下
 - 可一键切换 2D/3D，使用在线 DEM 将底图和轨迹贴合到真实地形，并叠加海拔分层设色、山体阴影与随主题变化的地平线雾化
 - 地图铺满内容区，摘要和图表以半透明背景模糊层覆盖在地图上，可一键收起
 - 状态栏持续显示文件格式、距离、累计爬升、总用时和轨迹点数
@@ -40,7 +40,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 构建出的 64 位 MSI 位于：
 
 ```text
-artifacts\installer\GpxView-0.2.4-win-x64.msi
+artifacts\installer\GpxView-0.2.7-win-x64.msi
 ```
 
 安装器将 GpxView 安装到 Program Files，创建开始菜单入口，并向 Windows 注册 GPX、KML、KMZ、FIT 的可选打开方式和“默认应用”能力；它不会在安装时抢占现有默认程序，也不创建桌面快捷方式。GitHub 版可在应用设置中为这些格式设为 GpxView；若 Windows 已用受保护的默认应用记录锁定其他程序，设置面板会改为打开系统确认入口。安装包包含 .NET 10 桌面运行时，终端用户无需另行安装 .NET。现代 Windows 通常已包含 Microsoft Edge WebView2 Runtime；若该组件缺失，应用会显示修复提示。
@@ -118,9 +118,9 @@ python tools\roadnet\build_density_pmtiles.py `
 
 转换器以不同的 `ORIGINALID` 作为通行次数，而不是直接累计 GPS 点，避免采样频率和 `PCOUNT` 放大热度；每个缩放层使用非零像素的 p99 和 `log1p` 映射热度。应用通过内部虚拟地址按 Range 请求读取最终归档，不监听本地端口。
 
-转换器默认生成 lossless WebP，并设置 2 万条源记录保护上限；扩大范围时必须显式提高 `--max-records`。应用启动时会扫描 `%LOCALAPPDATA%\GpxView\RoadNetwork` 顶层的所有 `*.pmtiles`，跳过损坏或不支持的文件，并为每个有效归档建立独立 Range 地址和地图图层。当前约定这些归档的覆盖范围互不重叠；备份文件可放入子目录，子目录不会被扫描。本地没有有效归档时，不显示“路网”按钮。
+转换器默认生成 lossless WebP，并设置 2 万条源记录保护上限；扩大范围时必须显式提高 `--max-records`。应用启动时会扫描 `%LOCALAPPDATA%\GpxView\RoadNetwork` 顶层的所有 `*.pmtiles`，跳过损坏或不支持的文件，并为每个有效归档建立独立 Range 地址和地图图层。每个远程归档使用稳定的 dataset ID 建立独立请求地址和缓存索引；同名本地归档只替代对应的远程 dataset，不会因北京、河北等省域边界框相交而屏蔽其他路网。备份文件可放入子目录，子目录不会被扫描。本地和远程都没有有效归档时，才不显示“路网”按钮。
 
-当远程私有路网服务提供 PMTiles 归档时，应用仍通过内部 Range 地址读取瓦片，但会把成功返回的 `GET 206` 字节段缓存到 `%LOCALAPPDATA%\GpxView\RoadNetworkCache`。缓存键包含服务归档 ID 与 ETag，因此归档版本变化后不会复用旧数据。设置面板会显示远程路网缓存大小和数据块数量，并可一键清理该缓存目录；清理不会删除 `%LOCALAPPDATA%\GpxView\RoadNetwork` 中的本地 PMTiles 文件。Worker 也会把远程 Range 片段写入 edge platform Cache API，以减少多人或多次访问同一区域时的 R2 读取操作；该缓存是边缘数据中心本地缓存，最好通过自有域名或 edge platform route 提供服务。
+当远程私有路网服务提供 PMTiles 归档时，应用仍通过内部 Range 地址读取瓦片，但会把成功返回的 `GET 206` 字节段缓存到 `%LOCALAPPDATA%\GpxView\RoadNetworkCache`。缓存键包含服务归档 ID 与 ETag，因此归档版本变化后不会复用旧数据。设置面板会显示远程路网缓存大小和数据块数量，并可一键清理该缓存目录；清理不会删除 `%LOCALAPPDATA%\GpxView\RoadNetwork` 中的本地 PMTiles 文件。Worker 也会把远程 Range 片段写入 edge platform Cache API，以减少多人或多次访问同一区域时的 R2 读取操作；该缓存是边缘数据中心本地缓存，最好通过自有域名或 edge platform route 提供服务。当前部署使用 `https://roadnet.example.invalid/`；已经连接旧 `example.invalid` 地址的设备会在目录验证成功后迁移设置和 Windows 凭据，迁移失败时保留旧凭据以便重试。
 
 例如生成北京范围、最高到 z16 的归档：
 
@@ -134,6 +134,20 @@ python tools\roadnet\build_density_pmtiles.py `
   --metatile-size 32 `
   --name "Beijing historical trajectory density (2017)" `
   --preview artifacts\roadnet\beijing-density-preview.png
+```
+
+河北生产归档使用同一套参数，网格总边界为 `113.5,36.0,119.5,42.5`：
+
+```powershell
+python tools\roadnet\build_density_pmtiles.py `
+  C:\Users\su27\Downloads\河北.zip `
+  "$env:LOCALAPPDATA\GpxView\RoadNetwork\hebei-density.pmtiles" `
+  --bounds 113.5,36.0,119.5,42.5 `
+  --maxzoom 16 `
+  --max-records 300000 `
+  --metatile-size 32 `
+  --name "Hebei historical trajectory density (2017)" `
+  --preview artifacts\roadnet\hebei-density-preview.png
 ```
 
 ## 最近轨迹与地名
@@ -169,7 +183,7 @@ Store 发布目录是与商店包身份解耦的应用载荷。若 Partner Cente
 dotnet build installer\GpxView.Store.Installer.wixproj -c Release
 ```
 
-输出为 `artifacts\installer\GpxView-0.2.4-store-win-x64.msi`。该项目会在构建时再次拒绝任何包含 `MapServices.local.json` 的 Store 载荷。
+输出为 `artifacts\installer\GpxView-0.2.7-store-win-x64.msi`。该项目会在构建时再次拒绝任何包含 `MapServices.local.json` 的 Store 载荷。
 
 Microsoft Store 中已预留正式产品 `GpxView`，其公开包身份如下：
 
@@ -200,7 +214,7 @@ dotnet publish src\GpxView.App\GpxView.App.csproj -p:PublishProfile=win-x64
 dotnet build installer\GpxView.Installer.wixproj -c Release
 ```
 
-输出为 `artifacts\installer\GpxView-0.2.4-win-x64.msi`。
+输出为 `artifacts\installer\GpxView-0.2.7-win-x64.msi`。
 
 应用图标如需从可编辑源重新生成：
 

@@ -8,7 +8,7 @@
   <Identity
     Name="SuDan.GpxView"
     Publisher="CN=DBB8CB7C-AA92-4365-B28B-709FB95AB14B"
-    Version="0.2.4.0"
+    Version="0.2.7.0"
     ProcessorArchitecture="x64" />
 
   <Properties>
