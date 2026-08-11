@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GpxView Web Test" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
+  <metadata><name>妙峰山测试轨迹</name></metadata>
+  <wpt lat="40.0349" lon="116.0210"><ele>785</ele><name>CP1 水站</name><desc>测试标注点</desc></wpt>
+  <trk><name>妙峰山测试轨迹</name><trkseg>
+    <trkpt lat="40.0300" lon="116.0100"><ele>620</ele><time>2026-08-11T00:00:00Z</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>118</gpxtpx:hr><gpxtpx:cad>72</gpxtpx:cad></gpxtpx:TrackPointExtension></extensions></trkpt>
+    <trkpt lat="40.0320" lon="116.0140"><ele>665</ele><time>2026-08-11T00:03:00Z</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>132</gpxtpx:hr><gpxtpx:cad>76</gpxtpx:cad></gpxtpx:TrackPointExtension></extensions></trkpt>
+    <trkpt lat="40.0349" lon="116.0210"><ele>785</ele><time>2026-08-11T00:08:00Z</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>149</gpxtpx:hr><gpxtpx:cad>80</gpxtpx:cad></gpxtpx:TrackPointExtension></extensions></trkpt>
+    <trkpt lat="40.0380" lon="116.0290"><ele>930</ele><time>2026-08-11T00:14:00Z</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>158</gpxtpx:hr><gpxtpx:cad>78</gpxtpx:cad></gpxtpx:TrackPointExtension></extensions></trkpt>
+  </trkseg></trk>
+</gpx>

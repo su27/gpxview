@@ -6,6 +6,8 @@
 
   const listeners = new Set();
   const webView = global.chrome?.webview ?? null;
+  let browserHandler = null;
+  const pendingBrowserMessages = [];
 
   if (webView) {
     webView.addEventListener('message', event => {
@@ -19,9 +21,25 @@
     available: Boolean(webView),
 
     send(message) {
-      if (!webView) return false;
-      webView.postMessage(message);
+      if (webView) {
+        webView.postMessage(message);
+        return true;
+      }
+      if (!browserHandler) {
+        pendingBrowserMessages.push(message);
+        return false;
+      }
+      browserHandler(message);
       return true;
+    },
+    attachBrowser(handler) {
+      if (webView) return () => {};
+      if (typeof handler !== 'function') throw new TypeError('The browser host handler must be a function.');
+      browserHandler = handler;
+      while (pendingBrowserMessages.length) browserHandler(pendingBrowserMessages.shift());
+      return message => {
+        for (const listener of listeners) listener(message);
+      };
     },
 
     onMessage(listener) {

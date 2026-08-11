@@ -1,0 +1,68 @@
+body.browser-mode #summaryPanel{top:62px}
+body.browser-mode #detailsToggle{top:68px}
+body.browser-mode #trackTabs{top:58px}
+body.browser-mode .maplibregl-ctrl-top-right{top:48px}
+
+#browserToolbar{position:absolute;z-index:16;left:10px;right:10px;top:9px;height:42px;display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:12px;pointer-events:auto}
+.browserButton,.browserSelect{height:31px;border:1px solid var(--inner-border);border-radius:8px;background:rgba(127,127,127,.08);color:var(--text);font:12px "Segoe UI",sans-serif}
+.browserButton{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 10px;cursor:pointer;white-space:nowrap}
+.browserButton:hover,.browserSelect:hover{background:rgba(127,127,127,.17)}
+.browserButton:focus-visible,.browserSelect:focus-visible,.browserInput:focus-visible{outline:2px solid #176bde;outline-offset:1px}
+.browserButton.primary{border-color:#176bde;background:#176bde;color:#fff;font-weight:650}
+.browserButton.primary:hover{background:#125fc8}
+.browserButton.icon{width:32px;padding:0;font-size:13px;font-weight:700}
+.browserButton.active{border-color:#176bde;color:#176bde;background:rgba(23,107,222,.12);font-weight:650}
+.browserButton.locked::after{content:"";width:6px;height:6px;border-radius:50%;background:#d08a18;box-shadow:0 0 0 2px var(--glass)}
+.browserSelect{padding:0 7px;max-width:132px}
+#browserToolbarSpacer{flex:1;min-width:4px}
+#browserStatus{min-width:0;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11px}
+
+#browserWelcome{position:absolute;z-index:12;left:50%;top:50%;transform:translate(-50%,-50%);width:min(430px,calc(100% - 28px));padding:24px;border-radius:17px;text-align:center}
+#browserWelcome h1{margin:0;font-size:24px;letter-spacing:-.02em}
+#browserWelcome p{margin:9px 0 18px;color:var(--muted);font-size:12px;line-height:1.65}
+#browserWelcome .browserButton{height:36px;padding:0 18px}
+#browserWelcomeHint{margin-top:12px;color:var(--label);font-size:10px}
+
+#browserDropOverlay{position:absolute;z-index:60;inset:8px;display:grid;place-items:center;border:2px dashed #176bde;border-radius:18px;background:rgba(23,107,222,.13);color:#176bde;font-size:20px;font-weight:700;backdrop-filter:blur(5px);pointer-events:none}
+
+#browserRoadScrim{position:absolute;z-index:47;inset:0;background:rgba(10,18,27,.2);backdrop-filter:blur(2px)}
+#browserRoadPanel{position:absolute;z-index:48;right:12px;top:59px;width:min(390px,calc(100% - 24px));max-height:calc(100% - 72px);padding:18px;border-radius:16px;overflow:auto}
+.browserPanelHeader{display:flex;align-items:center;gap:12px;margin-bottom:13px}
+.browserPanelHeader h2{min-width:0;flex:1;margin:0;font-size:18px}
+.browserPanelCopy{margin:0 0 13px;color:var(--muted);font-size:11px;line-height:1.65}
+.browserField{display:grid;gap:5px;margin:12px 0;color:var(--muted);font-size:11px}
+.browserInput{width:100%;height:36px;border:1px solid var(--inner-border);border-radius:9px;background:var(--select-bg);color:var(--select-text);padding:0 10px;font:13px "Segoe UI",sans-serif;text-transform:uppercase;letter-spacing:.05em}
+.browserTerms{display:flex;align-items:flex-start;gap:8px;margin:12px 0;color:var(--muted);font-size:10px;line-height:1.55}
+.browserTerms input{margin-top:2px;accent-color:#176bde}
+.browserPanelActions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:14px}
+.browserPanelError{min-height:17px;margin-top:8px;color:#c64d45;font-size:11px}
+.browserIdentity{padding:10px 11px;border:1px solid var(--inner-border);border-radius:10px;background:rgba(127,127,127,.06);font-size:12px}
+.browserIdentity strong{display:block;margin-bottom:3px}
+.browserIdentity span{color:var(--muted);font-size:10px}
+.browserArchiveList{display:grid;gap:8px;margin:13px 0}
+.browserArchive{display:flex;align-items:flex-start;gap:9px;padding:10px;border:1px solid var(--inner-border);border-radius:10px;background:rgba(127,127,127,.055);cursor:pointer}
+.browserArchive input{margin-top:2px;accent-color:#176bde}
+.browserArchiveCopy{min-width:0;flex:1}
+.browserArchiveName{display:block;font-size:12px;font-weight:650}
+.browserArchiveMeta{display:block;margin-top:3px;color:var(--muted);font-size:10px}
+.browserDanger{margin-right:auto;color:#c64d45}
+
+#browserToast{position:absolute;z-index:70;left:50%;top:61px;transform:translateX(-50%);max-width:min(620px,calc(100% - 24px));padding:8px 12px;border-radius:9px;background:rgba(38,42,47,.93);color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:11px;line-height:1.45;pointer-events:none}
+
+@media(max-width:880px){
+  #browserToolbar{right:auto;max-width:calc(100% - 20px);overflow-x:auto;scrollbar-width:none}
+  #browserToolbar::-webkit-scrollbar{display:none}
+  #browserStatus,#browserToolbarSpacer{display:none}
+  body.browser-mode #trackTabs{left:10px;right:10px;top:57px}
+  body.browser-mode #summaryPanel{top:102px}
+  body.browser-mode #detailsToggle{top:108px}
+  .browserSelect{max-width:105px}
+}
+
+@media(max-width:560px){
+  #browserToolbar .wideLabel{display:none}
+  #browserToolbar{gap:5px}
+  .browserButton{padding:0 8px}
+  .browserSelect{width:86px}
+  #browserWelcome{padding:20px}
+}

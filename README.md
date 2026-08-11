@@ -35,6 +35,12 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 
 键盘与鼠标操作：`Ctrl+O` 打开文件；地图获得焦点时按 `Tab` 切换摘要和海拔面板；`F11` 进入或退出全屏；全屏时也可按 `Esc` 返回；在地图上按住 `Shift` 并用鼠标左键拖动，可水平旋转地图，3D 状态下还可垂直调整倾斜角度；点击地图右上角的指南针可回到正北方向。设置、最近文件等面板中的 `Tab` 仍用于正常的键盘焦点导航。
 
+## 网页版
+
+网页版部署在 <https://web.example.invalid/>。它与桌面应用复用同一套地图、轨迹、海拔图、标注点和多路网前端代码，支持在浏览器中打开或拖放多个 GPX、KML、KMZ 文件，并提供轨迹切换、显示隐藏、底图、3D 地形、源坐标纠正和北京/河北私有路网选择。轨迹文件完全在浏览器本地解析，不会上传；网页版首版暂不支持 FIT、最近文件、Windows 文件关联和本地 PMTiles。
+
+私有路网使用一次性激活码授权当前浏览器。长期设备凭证和短期访问凭证都只存入 `HttpOnly`、`SameSite=Strict` Cookie，不暴露给网页 JavaScript，也不写入 `localStorage`；访问 PMTiles 必须携带有效授权且只能按受限字节段读取。北京和河北归档使用各自稳定的 dataset ID，省份选择不依赖目录顺序。
+
 ## 安装
 
 构建出的 64 位 MSI 位于：
@@ -52,6 +58,7 @@ artifacts\installer\GpxView-0.2.7-win-x64.msi
 - 随应用本地分发的 MapLibre GL JS 5.6.2
 - 随应用本地分发的 maplibre-contour 0.1.0，在 Web Worker 中从 DEM 生成矢量等高线
 - 随应用本地分发的 PMTiles JavaScript 4.4.1，通过 WebView2 Range 响应读取多个本地单文件瓦片包
+- 随应用本地分发的 fflate 0.8.2，供网页版在浏览器中解压 KMZ
 - OpenFreeMap/OpenMapTiles 矢量地图，Mapterhorn DEM，以及 OSM 系、天地图与 Esri 栅格地图服务
 - Garmin.FIT.Sdk 21.205.0
 - WiX Toolset SDK 5.0.2

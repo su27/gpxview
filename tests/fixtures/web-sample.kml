@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document><name>香山测试轨迹</name>
+    <Placemark><name>香炉峰</name><description>测试标注点</description><Point><coordinates>116.1871,39.9926,557</coordinates></Point></Placemark>
+    <Placemark><name>香山路线</name><LineString><coordinates>
+      116.1800,39.9880,120 116.1830,39.9900,260 116.1871,39.9926,557
+    </coordinates></LineString></Placemark>
+  </Document>
+</kml>

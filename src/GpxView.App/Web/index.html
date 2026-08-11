@@ -3,13 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://*.tianditu.gov.cn https://tiles.openfreemap.org https://tiles.mapterhorn.com; connect-src https://roadnet.gpxview https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://*.tianditu.gov.cn https://tiles.openfreemap.org https://tiles.mapterhorn.com; worker-src blob:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://*.tianditu.gov.cn https://tiles.openfreemap.org https://tiles.mapterhorn.com; connect-src 'self' https://roadnet.gpxview https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://*.tianditu.gov.cn https://tiles.openfreemap.org https://tiles.mapterhorn.com; worker-src blob:;">
   <title>GpxView Map</title>
   <link rel="stylesheet" href="vendor/maplibre-gl/5.6.2/maplibre-gl.css">
+  <link rel="stylesheet" href="browser.css">
   <script src="vendor/maplibre-gl/5.6.2/maplibre-gl.js"></script>
   <script src="vendor/maplibre-contour/0.1.0/maplibre-contour.min.js"></script>
   <script src="vendor/pmtiles/4.4.1/pmtiles.js"></script>
+  <script src="vendor/fflate/0.8.2/fflate.min.js"></script>
   <script src="host.js"></script>
+  <script src="browser-track.js"></script>
+  <script src="browser.js"></script>
   <style>
     :root{color-scheme:light;--page:#e9edf1;--text:#202124;--muted:#5f6368;--label:#70757a;--glass:rgba(255,255,255,.76);--chart-glass:rgba(255,255,255,.80);--glass-border:rgba(255,255,255,.72);--inner-border:rgba(20,25,30,.10);--shadow:rgba(18,28,38,.20);--select-bg:#f7f8fa;--select-text:#202124;--elevation-preview:#d46524;--elevation-preview-fill:rgba(212,101,36,.18)}
     :root[data-theme="dark"]{color-scheme:dark;--page:#202428;--text:#f1f3f4;--muted:#c2c5c9;--label:#aeb3b8;--glass:rgba(27,29,32,.79);--chart-glass:rgba(25,27,30,.83);--glass-border:rgba(255,255,255,.14);--inner-border:rgba(0,0,0,.34);--shadow:rgba(0,0,0,.42);--select-bg:#292c30;--select-text:#f1f3f4;--elevation-preview:#ffad66;--elevation-preview-fill:rgba(255,173,102,.20)}
@@ -210,7 +214,7 @@
 </div>
 <script>
   const fallbackStrings={
-    'Web.CompassNorth':'当前朝向：正北；点击回到正北','Web.CompassBearing':'当前朝向：{0} {1}°；点击回到正北','Web.North':'北','Web.NorthEast':'东北','Web.East':'东','Web.SouthEast':'东南','Web.South':'南','Web.SouthWest':'西南','Web.West':'西','Web.NorthWest':'西北','Web.NoData':'暂无数据','Web.TrackSummary':'轨迹摘要','Place.Recognizing':'正在识别地点…','Place.Unavailable':'地点暂不可用','Web.HideDetails':'隐藏详细信息（Tab）','Web.ShowDetails':'显示详细信息（Tab）','Web.Play':'播放轨迹','Web.Pause':'暂停轨迹回放','Web.Elevation':'海拔','Web.Slope':'坡度','Web.Speed':'速度','Web.HeartRate':'心率','Web.Power':'功率','Web.Waypoint':'标注点','Web.WaypointElevation':'海拔 {0} m','Web.DistanceFromStart':'距起点 {0}','Web.NoElevation':'无海拔数据','Web.PlaceUnknown':'地点尚未识别','Web.UntitledTrack':'未命名轨迹','Web.RoadAttribution':'本地历史轨迹密度'
+    'Web.CompassNorth':'当前朝向：正北；点击回到正北','Web.CompassBearing':'当前朝向：{0} {1}°；点击回到正北','Web.North':'北','Web.NorthEast':'东北','Web.East':'东','Web.SouthEast':'东南','Web.South':'南','Web.SouthWest':'西南','Web.West':'西','Web.NorthWest':'西北','Web.NoData':'暂无数据','Web.TrackSummary':'轨迹摘要','Place.Recognizing':'正在识别地点…','Place.Unavailable':'地点暂不可用','Web.HideDetails':'隐藏详细信息（Tab）','Web.ShowDetails':'显示详细信息（Tab）','Web.Play':'播放轨迹','Web.Pause':'暂停轨迹回放','Web.Elevation':'海拔','Web.Slope':'坡度','Web.Speed':'速度','Web.HeartRate':'心率','Web.Power':'功率','Web.Waypoint':'标注点','Web.WaypointElevation':'海拔 {0} m','Web.DistanceFromStart':'距起点 {0}','Web.NoElevation':'无海拔数据','Web.PlaceUnknown':'地点尚未识别','Web.UntitledTrack':'未命名轨迹','Web.RoadAttribution':'授权历史轨迹密度','Web.HideOnMap':'在地图上隐藏','Web.ShowOnMap':'在地图上显示','Web.HideTrack':'隐藏 {0}','Web.ShowTrack':'显示 {0}','Web.ViewTrack':'查看 {0}','Web.CloseTrack':'关闭 {0}','Web.TrackChart':'轨迹曲线','Web.ElevationChart':'海拔曲线','Web.ActivityChart':'运动曲线'
   };
   let locale='zh-CN',localizedStrings={};
   function t(key,...values){let text=localizedStrings[key]??fallbackStrings[key]??key;values.forEach((value,index)=>text=text.replaceAll(`{${index}}`,String(value)));return text}
@@ -236,7 +240,8 @@
   const openFreeMapId='openfreemap',outdoorMapId='outdoor',openFreeMapStyle='https://tiles.openfreemap.org/styles/liberty',outdoorBaseStyle='https://tiles.openfreemap.org/styles/bright';
   const terrainSourceId='gpxview-terrain',terrainReliefId='gpxview-terrain-relief',terrainHillshadeId='gpxview-terrain-hillshade',terrainTileJsonUrl='https://tiles.mapterhorn.com/tilejson.json',defaultTerrainMaxZoom=12,maxTerrainPitch=75,defaultTerrainPitch=65;
   const outdoorDemSourceId='gpxview-outdoor-dem',outdoorReliefId='gpxview-outdoor-relief',outdoorHillshadeId='gpxview-outdoor-hillshade',contourSourceId='gpxview-contours',contourLineId='gpxview-contour-lines',contourLabelId='gpxview-contour-labels',mountainPeakId='gpxview-mountain-peaks';
-  const roadNetworkSourceId=index=>`gpxview-road-network-${index}`,roadNetworkLayerId=index=>`gpxview-road-network-density-${index}`;
+  const roadNetworkKey=(archive,index)=>String(archive?.id||`archive-${index}`).replace(/[^a-z0-9_-]+/gi,'-');
+  const roadNetworkSourceId=(archive,index)=>`gpxview-road-network-${roadNetworkKey(archive,index)}`,roadNetworkLayerId=(archive,index)=>`gpxview-road-network-density-${roadNetworkKey(archive,index)}`;
   const rasterMaps={
     osm:{layers:[rasterLayer(['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],19,'© OpenStreetMap contributors')]},
     ...(tiandituConfigured?{
@@ -312,7 +317,7 @@
   const selectedOverlays=new Set();
   const loadedTracks=new Map();
   let activeTrackId=null,profile=[],chartWaypoints=[],chartWaypointHitAreas=[],styleReady=false,styleMode=openFreeMapId,activeBaseMap=openFreeMapId,darkTheme=false,availableSeries={},availableTrackColors={},trackColorMode='uniform';
-  let terrainEnabled=false,terrainResourcesPromise=null,contourDemSource=null,terrainAnimateOnReady=false,styleGeneration=0,roadNetworkEnabled=roadNetworkAvailable&&roadNetworkConfig.enabled!==false,roadNetworkInitialFit=false;
+  let terrainEnabled=false,terrainResourcesPromise=null,contourDemSource=null,terrainAnimateOnReady=false,styleGeneration=0,roadNetworkEnabled=roadNetworkAvailable&&roadNetworkConfig.enabled!==false,roadNetworkSelectedIds=new Set(Array.isArray(roadNetworkConfig.selectedIds)?roadNetworkConfig.selectedIds:roadNetworkArchives.map(archive=>archive.id).filter(Boolean)),roadNetworkInitialFit=false;
   let trackData=featureCollection([]),trackColorData=featureCollection([]),waypointData=featureCollection([]),endData=featureCollection([]),hoverData=featureCollection([]),playbackData=featureCollection([]),pendingFit=false,trackHasChartData=false;
   let currentRecentEntries=[],settingsState={language:'system',resolvedLocale:'zh-CN',geocodingAvailable:true,geocodingEnabled:false,geocodingConsentPending:false,version:'',channel:'GitHub',fileAssociations:[],roadNetworks:[],roadNetworkCache:{visible:false,bytes:0,entries:0,busy:false}};
   const playback={axis:[],usesTime:false,total:0,position:0,playing:false,maximumDuration:120,follow:false,frameId:0,startTimestamp:0,startPosition:0,currentIndex:-1,lastFollowTimestamp:0};
@@ -396,9 +401,9 @@
     styleReady=false;
     if(roadNetworkAvailable){
       roadNetworkArchives.forEach((archive,index)=>{
-        const sourceId=roadNetworkSourceId(index),layerId=roadNetworkLayerId(index);
+        const sourceId=roadNetworkSourceId(archive,index),layerId=roadNetworkLayerId(archive,index),selected=!archive.id||roadNetworkSelectedIds.has(archive.id);
         map.addSource(sourceId,{type:'raster',url:`pmtiles://${archive.url}`,tileSize:archive.tileSize||256,minzoom:archive.minZoom,maxzoom:archive.maxZoom,attribution:t('Web.RoadAttribution')});
-        map.addLayer({id:layerId,type:'raster',source:sourceId,minzoom:archive.minZoom||11,maxzoom:(archive.maxZoom||16)+1,layout:{visibility:roadNetworkEnabled?'visible':'none'},paint:{'raster-opacity':.92,'raster-fade-duration':0,'raster-resampling':'linear'}})
+        map.addLayer({id:layerId,type:'raster',source:sourceId,minzoom:archive.minZoom||11,maxzoom:(archive.maxZoom||16)+1,layout:{visibility:roadNetworkEnabled&&selected?'visible':'none'},paint:{'raster-opacity':.92,'raster-fade-duration':0,'raster-resampling':'linear'}})
       })
     }
     map.addSource('gpxview-tracks',{type:'geojson',data:featureCollection([])});
@@ -434,8 +439,8 @@
     if(!styleReady||!roadNetworkAvailable)return;
     const beforeTrack=map.getLayer('gpxview-track-shadow')?'gpxview-track-shadow':undefined;
     if(!beforeTrack)return;
-    roadNetworkArchives.forEach((_,index)=>{
-      const layerId=roadNetworkLayerId(index);
+    roadNetworkArchives.forEach((archive,index)=>{
+      const layerId=roadNetworkLayerId(archive,index);
       if(map.getLayer(layerId))map.moveLayer(layerId,beforeTrack)
     })
   }
@@ -564,11 +569,11 @@
     map.getSource('gpxview-tracks')?.setData(trackData);map.getSource('gpxview-track-colors')?.setData(trackColorData);map.getSource('gpxview-waypoints')?.setData(waypointData);map.getSource('gpxview-ends')?.setData(endData);map.getSource('gpxview-hover')?.setData(hoverData);map.getSource('gpxview-playback')?.setData(playbackData);
     if(!pendingFit)return;pendingFit=false;const bounds=new maplibregl.LngLatBounds();trackData.features.forEach(feature=>feature.geometry.coordinates.forEach(coordinate=>bounds.extend(coordinate)));waypointData.features.forEach(feature=>bounds.extend(feature.geometry.coordinates));if(!bounds.isEmpty())map.fitBounds(bounds,{padding:{top:55,right:55,bottom:chartPanel.hidden?55:chartPanel.offsetHeight+34,left:230},maxZoom:16,duration:500})
   }
-  function setRoadNetworkEnabled(enabled){roadNetworkEnabled=roadNetworkAvailable&&enabled;if(!styleReady)return;roadNetworkArchives.forEach((_,index)=>{const layerId=roadNetworkLayerId(index);if(map.getLayer(layerId))map.setLayoutProperty(layerId,'visibility',roadNetworkEnabled?'visible':'none')});keepRoadNetworkAboveBaseMap()}
+  function setRoadNetworkEnabled(enabled){roadNetworkEnabled=roadNetworkAvailable&&enabled;if(!styleReady)return;roadNetworkArchives.forEach((archive,index)=>{const layerId=roadNetworkLayerId(archive,index),selected=!archive.id||roadNetworkSelectedIds.has(archive.id);if(map.getLayer(layerId))map.setLayoutProperty(layerId,'visibility',roadNetworkEnabled&&selected?'visible':'none')});keepRoadNetworkAboveBaseMap()}
   function setRoadNetworkConfig(config){
-    const previous=JSON.stringify(roadNetworkArchives.map(archive=>[archive.url,archive.minZoom,archive.maxZoom,archive.tileSize]));
-    roadNetworkConfig=config||{};roadNetworkArchives=Array.isArray(roadNetworkConfig.archives)?roadNetworkConfig.archives.filter(archive=>archive?.url):[];roadNetworkAvailable=Boolean(roadNetworkConfig.available&&roadNetworkArchives.length);roadNetworkEnabled=roadNetworkAvailable&&roadNetworkConfig.enabled!==false;
-    const next=JSON.stringify(roadNetworkArchives.map(archive=>[archive.url,archive.minZoom,archive.maxZoom,archive.tileSize]));
+    const previous=JSON.stringify(roadNetworkArchives.map(archive=>[archive.id,archive.url,archive.minZoom,archive.maxZoom,archive.tileSize]));
+    roadNetworkConfig=config||{};roadNetworkArchives=Array.isArray(roadNetworkConfig.archives)?roadNetworkConfig.archives.filter(archive=>archive?.url):[];roadNetworkAvailable=Boolean(roadNetworkConfig.available&&roadNetworkArchives.length);roadNetworkEnabled=roadNetworkAvailable&&roadNetworkConfig.enabled!==false;roadNetworkSelectedIds=new Set(Array.isArray(roadNetworkConfig.selectedIds)?roadNetworkConfig.selectedIds:roadNetworkArchives.map(archive=>archive.id).filter(Boolean));
+    const next=JSON.stringify(roadNetworkArchives.map(archive=>[archive.id,archive.url,archive.minZoom,archive.maxZoom,archive.tileSize]));
     if(previous===next){setRoadNetworkEnabled(roadNetworkEnabled);return}
     roadNetworkInitialFit=false;styleReady=false;const style=styleMode===openFreeMapId?openFreeMapStyle:styleMode===outdoorMapId?outdoorBaseStyle:createRasterStyle(activeBaseMap);map.setStyle(style,{diff:false})
   }

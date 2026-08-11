@@ -1,6 +1,6 @@
 # GpxView 第三方许可与在线服务 / Third-Party Notices
 
-更新日期 / Last updated: 2026-07-23
+更新日期 / Last updated: 2026-08-11
 
 GpxView 包含或调用以下第三方组件与服务。各项目仍由其权利人拥有，并适用各自的许可与服务条款。
 
@@ -17,6 +17,9 @@ GpxView includes or accesses the following third-party components and services. 
 - PMTiles JavaScript 4.4.1 — BSD 3-Clause License
   https://github.com/protomaps/PMTiles
   完整许可文件位于 `Web/vendor/pmtiles/4.4.1/LICENSE.txt`。
+- fflate 0.8.2 — MIT License
+  https://github.com/101arrowz/fflate
+  完整许可文件位于 `Web/vendor/fflate/0.8.2/LICENSE`。
 - Microsoft Edge WebView2 SDK — Microsoft software license terms
   https://developer.microsoft.com/microsoft-edge/webview2/
 - Garmin FIT SDK 21.205.0 — Garmin FIT SDK license
