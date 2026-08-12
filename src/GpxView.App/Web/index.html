@@ -288,7 +288,7 @@
       this.map.off('rotate',this.update);this.button.removeEventListener('click',this.reset);this.container.remove();this.map=undefined
     }
   }
-  const map=new maplibregl.Map({container:'map',style:openFreeMapStyle,center:[105,35],zoom:2,maxPitch:maxTerrainPitch,pitchWithRotate:false,touchPitch:false,attributionControl:false});
+  const map=new maplibregl.Map({container:'map',style:openFreeMapStyle,center:[105,35],zoom:2,maxPitch:maxTerrainPitch,pitchWithRotate:false,touchPitch:true,attributionControl:false});
   const waypointPopup=new maplibregl.Popup({offset:14,closeButton:true,closeOnClick:true});
   const compassControl=new CompassControl();map.addControl(compassControl,'top-right');
   map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
@@ -588,7 +588,7 @@
   function setMetric(rowId,valueId,value){const row=document.getElementById(rowId);row.hidden=!value;if(value)document.getElementById(valueId).textContent=value}
   function updateSummary(summary){if(!summary)return;document.getElementById('summaryFormat').textContent=summary.formatLine;document.getElementById('summaryDistance').textContent=summary.distance;summaryMetrics.hidden=false;setMetric('durationMetric','summaryDuration',summary.duration);setMetric('elevationMetric','summaryElevation',summary.elevation);setMetric('speedMetric','summarySpeed',summary.speed);setMetric('heartRateMetric','summaryHeartRate',summary.heartRate);setMetric('cadencePowerMetric','summaryCadencePower',summary.cadencePower)}
   function postHostMessage(message){gpxHost.send(message)}
-  function setPlaceName(placeName){document.getElementById('summaryLocation').textContent=placeName||t('Place.Unavailable')}
+  function setPlaceName(placeName){document.getElementById('locationMetric').hidden=false;document.getElementById('summaryLocation').textContent=placeName||t('Place.Unavailable')}
   function activeTrack(){return activeTrackId?loadedTracks.get(activeTrackId):null}
   function waypointLabel(waypoint){return waypoint?.name||waypoint?.comment||waypoint?.symbol||waypoint?.type||''}
   function waypointTitle(waypoint,index){return waypointLabel(waypoint)||`${t('Web.Waypoint')} ${index+1}`}
@@ -834,7 +834,7 @@
   }
   function activateTrack(id){
     const track=loadedTracks.get(id);if(!track){if(!loadedTracks.size)clearTrackDetails();return}
-    pausePlayback();waypointPopup.remove();activeTrackId=id;profile=track.profile||[];computeProfileSlopes();chartWaypoints=projectWaypointsToProfile(track.waypoints);trackColorData=featureCollection([]);hoverData=featureCollection([]);playbackData=featureCollection([]);document.getElementById('summaryTitle').textContent=track.name||track.fileName||t('Web.TrackSummary');updateSummary(track.summary);setPlaceName(track.placeName||t('Place.Recognizing'));summaryPanel.hidden=false;detailsToggle.hidden=false;setRecentPanelVisible(false);
+    pausePlayback();waypointPopup.remove();activeTrackId=id;profile=track.profile||[];computeProfileSlopes();chartWaypoints=projectWaypointsToProfile(track.waypoints);trackColorData=featureCollection([]);hoverData=featureCollection([]);playbackData=featureCollection([]);document.getElementById('summaryTitle').textContent=track.name||track.fileName||t('Web.TrackSummary');updateSummary(track.summary);document.getElementById('locationMetric').hidden=track.showPlaceName===false;if(track.showPlaceName!==false)setPlaceName(track.placeName||t('Place.Recognizing'));summaryPanel.hidden=false;detailsToggle.hidden=false;setRecentPanelVisible(false);
     trackHasChartData=refreshSeriesControls();rebuildTrackMapData();refreshTrackColorControls();const hasPlayback=profile.length>1,playbackOnly=!trackHasChartData&&hasPlayback;chartPanel.hidden=!trackHasChartData&&!hasPlayback;chartPanel.classList.toggle('playback-only',playbackOnly);document.body.classList.toggle('chart-visible',!chartPanel.hidden);document.body.classList.toggle('compact-chart',playbackOnly);preparePlayback();renderTrackTabs();applyOverlayData();renderChart(playback.currentIndex)
   }
   function setTracks(data){
@@ -857,6 +857,7 @@
     const waypointColor=activeTrack()?.color||'#176bde',occupiedLabels=[];
     const waypointLayouts=chartWaypoints.map(marker=>({marker,xx:x(marker.position),anchorY:keys.includes('elevation')&&Number.isFinite(marker.elevationMeters)?Math.max(pad.t+13,Math.min(h-pad.b,y('elevation',marker.elevationMeters))):pad.t+13,highlighted:marker===activeWaypoint}));
     waypointLayouts.forEach(layout=>{const {xx,anchorY,highlighted}=layout;ctx.save();ctx.strokeStyle=waypointColor;ctx.globalAlpha=highlighted ? .7 : .3;ctx.lineWidth=highlighted?1.5:1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(xx,pad.t);ctx.lineTo(xx,anchorY);ctx.stroke();ctx.restore();const radius=highlighted?5.2:4.5,centerY=anchorY-radius-3;ctx.fillStyle=waypointColor;ctx.beginPath();ctx.moveTo(xx,anchorY);ctx.bezierCurveTo(xx-radius*.85,anchorY-radius*.9,xx-radius,centerY,xx,centerY-radius);ctx.bezierCurveTo(xx+radius,centerY,xx+radius*.85,anchorY-radius*.9,xx,anchorY);ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(xx,centerY-radius*.25,radius*.3,0,Math.PI*2);ctx.fill()});
+    if(matchMedia('(max-width:560px),(pointer:coarse)').matches){waypointLayouts.forEach(layout=>chartWaypointHitAreas.push({marker:layout.marker,x:layout.xx,labelRect:{x:layout.xx-9,y:layout.anchorY-22,width:18,height:24}}));return}
     ctx.textBaseline='middle';waypointLayouts.forEach((layout,index)=>{
       const horizontalInset=layout.highlighted?4:pad.l,availableWidth=Math.max(80,w-horizontalInset-(layout.highlighted?4:pad.r));
       ctx.font='600 10px Segoe UI';const text=fitCanvasText(ctx,layout.marker.title,Math.min(layout.highlighted?270:116,availableWidth-10)),titleWidth=ctx.measureText(text).width;

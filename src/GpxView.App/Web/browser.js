@@ -130,9 +130,11 @@
       case 'setTrackVisibility': setTrackVisibility(message.id, Boolean(message.visible)); break;
       case 'closeTrack': closeTrack(message.id); break;
       case 'terrainState':
+        const terrainWasEnabled = state.terrainEnabled;
         state.terrainEnabled = Boolean(message.enabled);
         elements.terrain?.classList.toggle('active', state.terrainEnabled);
         elements.terrain && (elements.terrain.textContent = state.terrainEnabled ? '2D' : '3D');
+        if (!terrainWasEnabled && state.terrainEnabled && matchMedia('(max-width:560px),(pointer:coarse)').matches) showToast('双指上下拖动可调整俯仰角度');
         if (message.error) showToast(message.error);
         break;
       case 'mapError': if (message.error) showToast(message.error); break;
