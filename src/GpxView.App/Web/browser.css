@@ -13,7 +13,8 @@ body.browser-mode .maplibregl-ctrl-top-right{top:48px}
 .browserButton.icon{width:32px;padding:0;font-size:13px;font-weight:700}
 .browserButton.active{border-color:#176bde;color:#176bde;background:rgba(23,107,222,.12);font-weight:650}
 .browserButton.locked::after{content:"";width:6px;height:6px;border-radius:50%;background:#d08a18;box-shadow:0 0 0 2px var(--glass)}
-.browserSelect{padding:0 7px;max-width:132px}
+.browserSelect{padding:0 7px;max-width:132px;background:var(--select-bg);color:var(--select-text)}
+.browserSelect option{background-color:var(--select-bg);color:var(--select-text)}
 #browserToolbarSpacer{flex:1;min-width:4px}
 #browserStatus{min-width:0;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11px}
 
