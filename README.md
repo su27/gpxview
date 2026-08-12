@@ -37,7 +37,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 
 ## 网页版
 
-网页版部署在 <https://web.example.invalid/>。它与桌面应用复用同一套地图、轨迹、海拔图、标注点和多路网前端代码，支持在浏览器中打开或拖放多个 GPX、KML、KMZ 文件，并提供轨迹切换、显示隐藏、底图、3D 地形、源坐标纠正和北京/河北私有路网选择。轨迹文件完全在浏览器本地解析，不会上传；网页版首版暂不支持 FIT、最近文件、Windows 文件关联和本地 PMTiles。
+网页版部署在 <https://web.example.invalid/>。它与桌面应用复用同一套地图、轨迹、海拔图、标注点和多路网前端代码，支持在浏览器中打开或拖放多个 GPX、KML、KMZ、FIT 文件，并提供轨迹切换、显示隐藏、底图、3D 地形、源坐标纠正和北京/河北私有路网选择。轨迹文件完全在浏览器本地解析，不会上传；网页版暂不支持最近文件、Windows 文件关联和本地 PMTiles。
 
 私有路网使用一次性激活码授权当前浏览器。长期设备凭证和短期访问凭证都只存入 `HttpOnly`、`SameSite=Strict` Cookie，不暴露给网页 JavaScript，也不写入 `localStorage`；访问 PMTiles 必须携带有效授权且只能按受限字节段读取。北京和河北归档使用各自稳定的 dataset ID，省份选择不依赖目录顺序。
 
@@ -59,8 +59,9 @@ artifacts\installer\GpxView-0.2.7-win-x64.msi
 - 随应用本地分发的 maplibre-contour 0.1.0，在 Web Worker 中从 DEM 生成矢量等高线
 - 随应用本地分发的 PMTiles JavaScript 4.4.1，通过 WebView2 Range 响应读取多个本地单文件瓦片包
 - 随应用本地分发的 fflate 0.8.2，供网页版在浏览器中解压 KMZ
+- Garmin FIT JavaScript SDK 21.213.0，供网页版在独立 Worker 中解析 FIT
 - OpenFreeMap/OpenMapTiles 矢量地图，Mapterhorn DEM，以及 OSM 系、天地图与 Esri 栅格地图服务
-- Garmin.FIT.Sdk 21.205.0
+- Garmin.FIT.Sdk 21.205.0，供桌面版解析 FIT
 - WiX Toolset SDK 5.0.2
 - xUnit
 

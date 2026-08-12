@@ -49,18 +49,18 @@
         <button id="browserRoad" class="browserButton locked" type="button">路网</button>
         <button id="browserTerrain" class="browserButton icon" type="button" title="切换三维地形">3D</button>
         <button id="browserTheme" class="browserButton icon" type="button" title="切换主题">◐</button>
-        <span id="browserToolbarSpacer"></span><span id="browserStatus">可打开 GPX、KML 和 KMZ，文件不会上传</span>
+        <span id="browserToolbarSpacer"></span><span id="browserStatus">可打开 GPX、KML、KMZ 和 FIT，文件不会上传</span>
       </header>
       <section id="browserWelcome" class="glass">
         <h1>GpxView Web</h1>
         <p>在浏览器中查看轨迹、海拔、标注点和北京/河北授权路网。<br>轨迹文件只在当前浏览器中解析，不会上传到服务器。</p>
-        <button id="browserWelcomeOpen" class="browserButton primary" type="button">打开 GPX / KML / KMZ</button>
+        <button id="browserWelcomeOpen" class="browserButton primary" type="button">打开 GPX / KML / KMZ / FIT</button>
         <div id="browserWelcomeHint">也可以把多个轨迹文件直接拖到这里</div>
       </section>
       <div id="browserDropOverlay" hidden>松开以打开轨迹</div>
       <div id="browserRoadScrim" hidden></div><section id="browserRoadPanel" class="glass" hidden></section>
       <div id="browserToast" hidden></div>
-      <input id="browserFileInput" type="file" accept=".gpx,.kml,.kmz,application/gpx+xml,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz" multiple hidden>
+      <input id="browserFileInput" type="file" accept=".gpx,.kml,.kmz,.fit,application/gpx+xml,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/vnd.ant.fit" multiple hidden>
     `);
     Object.assign(elements, {
       open: document.getElementById('browserOpen'),
@@ -158,7 +158,7 @@
   async function openFiles(fileList) {
     const files = Array.from(fileList || []);
     if (!files.length) return;
-    const supported = files.filter(file => /\.(gpx|kml|kmz)$/i.test(file.name));
+    const supported = files.filter(file => /\.(gpx|kml|kmz|fit)$/i.test(file.name));
     const rejected = files.length - supported.length;
     const errors = [];
     let opened = 0;
@@ -180,7 +180,7 @@
     if (state.tracks.size) elements.welcome.hidden = true;
     emitTracks(opened > 0);
     setStatus(state.tracks.size ? `已打开 ${state.tracks.size} 条轨迹` : '尚未打开轨迹');
-    if (rejected) errors.push(`${rejected} 个不支持的文件已跳过（网页版首版支持 GPX、KML、KMZ）`);
+    if (rejected) errors.push(`${rejected} 个不支持的文件已跳过（网页版支持 GPX、KML、KMZ、FIT）`);
     if (errors.length) showToast(errors.slice(0, 3).join('\n'));
   }
 
@@ -237,7 +237,7 @@
     emit({ type: 'removeTrack', id, activeTrackId: state.activeTrackId });
     if (!state.tracks.size) {
       elements.welcome.hidden = false;
-      setStatus('可打开 GPX、KML 和 KMZ，文件不会上传');
+      setStatus('可打开 GPX、KML、KMZ 和 FIT，文件不会上传');
     } else setStatus(`已打开 ${state.tracks.size} 条轨迹`);
   }
 

@@ -5,6 +5,9 @@
   const maximumMapPoints = 30000;
   const maximumProfilePoints = 8000;
   const earthRadiusMeters = 6371008.8;
+  const fitRequests = new Map();
+  let fitWorker = null;
+  let fitRequestId = 0;
 
   function localElements(root, name) {
     return Array.from(root?.getElementsByTagName?.('*') || []).filter(element => element.localName === name);
@@ -176,15 +179,56 @@
     return { text: global.fflate.strFromU8(entry), format: 'KMZ' };
   }
 
+  function getFitWorker() {
+    if (fitWorker) return fitWorker;
+    fitWorker = new Worker(new URL('./browser-fit-worker.js', document.baseURI), {
+      type: 'module',
+      name: 'gpxview-fit-decoder'
+    });
+    fitWorker.addEventListener('message', event => {
+      const request = fitRequests.get(event.data?.id);
+      if (!request) return;
+      fitRequests.delete(event.data.id);
+      if (event.data.error) request.reject(new Error(event.data.error));
+      else request.resolve(event.data.points || []);
+    });
+    fitWorker.addEventListener('error', event => {
+      const error = new Error(event.message || 'FIT 解析组件加载失败');
+      for (const request of fitRequests.values()) request.reject(error);
+      fitRequests.clear();
+      fitWorker?.terminate();
+      fitWorker = null;
+    });
+    return fitWorker;
+  }
+
+  async function parseFit(file, sourceCoordinateSystem) {
+    if (file.size > maximumFileBytes) throw new Error('文件超过 64 MiB，网页版暂不读取');
+    const id = ++fitRequestId;
+    const buffer = await file.arrayBuffer();
+    const rawPoints = await new Promise((resolve, reject) => {
+      fitRequests.set(id, { resolve, reject });
+      getFitWorker().postMessage({ id, buffer }, [buffer]);
+    });
+    const points = rawPoints.map(point => {
+      const converted = convertCoordinate(point.latitude, point.longitude, sourceCoordinateSystem);
+      return { ...point, latitude: converted.latitude, longitude: converted.longitude };
+    });
+    return { name: baseName(file.name), format: 'FIT', segments: points.length ? [points] : [], waypoints: [] };
+  }
+
   async function parseFile(file, options = {}) {
-    const source = await readTrackSource(file);
-    const document = parseXml(source.text);
-    const rootName = document.documentElement?.localName?.toLowerCase();
     const sourceCoordinateSystem = options.sourceCoordinateSystem || 'wgs84';
     let parsed;
-    if (rootName === 'gpx') parsed = parseGpx(document, file.name, sourceCoordinateSystem);
-    else if (rootName === 'kml') parsed = parseKml(document, file.name, sourceCoordinateSystem, source.format === 'KMZ' ? 'KMZ' : 'KML');
-    else throw new Error('仅支持 GPX、KML 和 KMZ 轨迹文件');
+    if (/\.fit$/i.test(file.name)) parsed = await parseFit(file, sourceCoordinateSystem);
+    else {
+      const source = await readTrackSource(file);
+      const document = parseXml(source.text);
+      const rootName = document.documentElement?.localName?.toLowerCase();
+      if (rootName === 'gpx') parsed = parseGpx(document, file.name, sourceCoordinateSystem);
+      else if (rootName === 'kml') parsed = parseKml(document, file.name, sourceCoordinateSystem, source.format === 'KMZ' ? 'KMZ' : 'KML');
+      else throw new Error('仅支持 GPX、KML、KMZ 和 FIT 轨迹文件');
+    }
     if (!parsed.segments.length && !parsed.waypoints.length) throw new Error('文件中没有可显示的轨迹点或标注点');
     return buildPayload(parsed, file.name, options);
   }

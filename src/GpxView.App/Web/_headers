@@ -1,5 +1,5 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://*.tianditu.gov.cn https://tiles.openfreemap.org https://tiles.mapterhorn.com; connect-src 'self' https://roadnet.gpxview https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://*.tianditu.gov.cn https://tiles.openfreemap.org https://tiles.mapterhorn.com; worker-src blob:;
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://*.tianditu.gov.cn https://tiles.openfreemap.org https://tiles.mapterhorn.com; connect-src 'self' https://roadnet.gpxview https://tile.openstreetmap.org https://tile.opentopomap.org https://a.tile.openstreetmap.fr https://server.arcgisonline.com https://*.tianditu.gov.cn https://tiles.openfreemap.org https://tiles.mapterhorn.com; worker-src 'self' blob:;
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: no-referrer

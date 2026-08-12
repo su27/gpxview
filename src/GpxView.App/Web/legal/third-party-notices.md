@@ -1,6 +1,6 @@
 # GpxView 第三方许可与在线服务 / Third-Party Notices
 
-更新日期 / Last updated: 2026-08-11
+更新日期 / Last updated: 2026-08-12
 
 GpxView 包含或调用以下第三方组件与服务。各项目仍由其权利人拥有，并适用各自的许可与服务条款。
 
@@ -22,8 +22,11 @@ GpxView includes or accesses the following third-party components and services. 
   完整许可文件位于 `Web/vendor/fflate/0.8.2/LICENSE`。
 - Microsoft Edge WebView2 SDK — Microsoft software license terms
   https://developer.microsoft.com/microsoft-edge/webview2/
-- Garmin FIT SDK 21.205.0 — Garmin FIT SDK license
+- Garmin FIT SDK 21.205.0（桌面版 / desktop）— Garmin FIT SDK license
   https://developer.garmin.com/fit/overview/
+- Garmin FIT JavaScript SDK 21.213.0（网页版 / web）— Flexible and Interoperable Data Transfer (FIT) Protocol License
+  https://github.com/garmin/fit-javascript-sdk
+  完整许可文件位于 `Web/vendor/garmin-fitsdk/21.213.0/LICENSE.txt`。
 - .NET 10 — MIT License and Microsoft notices
   https://github.com/dotnet/runtime
 - WiX Toolset 5 — Microsoft Reciprocal License (MS-RL)
