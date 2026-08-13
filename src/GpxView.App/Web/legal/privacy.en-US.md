@@ -1,6 +1,6 @@
 # GpxView Privacy Policy
 
-Last updated: July 23, 2026
+Last updated: August 13, 2026
 
 GpxView is a local Windows track viewer. It does not require an account, contain advertising or analytics SDKs, or upload complete track files to a GpxView-operated server.
 
@@ -29,6 +29,12 @@ The request does not include the complete route, track file, filename, heart rat
 You can turn this feature off at any time under Settings → Place recognition. Once disabled, no new recognition requests are made. Place names already cached locally can still be displayed.
 
 Nominatim privacy policy: https://osmfoundation.org/wiki/Privacy_Policy
+
+## Current location on the web version
+
+GpxView reads the current location and accuracy supplied by your browser only after you click the Current location button and grant browser permission. The position remains in the current page's memory and is used only to display a location dot and move the map. It is not written to a track file or local storage and is not sent to the GpxView road-network service. After the map moves to that area, the selected map provider receives the tile requests needed for the visible map as usual.
+
+GpxView does not continuously track your location in the background. You can revoke the permission at any time in your browser's site settings.
 
 ## Sharing and retention
 

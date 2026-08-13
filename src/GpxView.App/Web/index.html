@@ -318,7 +318,7 @@
   const loadedTracks=new Map();
   let activeTrackId=null,profile=[],chartWaypoints=[],chartWaypointHitAreas=[],styleReady=false,styleMode=openFreeMapId,activeBaseMap=openFreeMapId,darkTheme=false,availableSeries={},availableTrackColors={},trackColorMode='uniform';
   let terrainEnabled=false,terrainResourcesPromise=null,contourDemSource=null,terrainAnimateOnReady=false,styleGeneration=0,roadNetworkEnabled=roadNetworkAvailable&&roadNetworkConfig.enabled!==false,roadNetworkSelectedIds=new Set(Array.isArray(roadNetworkConfig.selectedIds)?roadNetworkConfig.selectedIds:roadNetworkArchives.map(archive=>archive.id).filter(Boolean)),roadNetworkInitialFit=false;
-  let trackData=featureCollection([]),trackColorData=featureCollection([]),waypointData=featureCollection([]),endData=featureCollection([]),hoverData=featureCollection([]),playbackData=featureCollection([]),pendingFit=false,trackHasChartData=false;
+  let trackData=featureCollection([]),trackColorData=featureCollection([]),waypointData=featureCollection([]),endData=featureCollection([]),hoverData=featureCollection([]),playbackData=featureCollection([]),userLocationData=featureCollection([]),pendingFit=false,trackHasChartData=false;
   let currentRecentEntries=[],settingsState={language:'system',resolvedLocale:'zh-CN',geocodingAvailable:true,geocodingEnabled:false,geocodingConsentPending:false,version:'',channel:'GitHub',fileAssociations:[],roadNetworks:[],roadNetworkCache:{visible:false,bytes:0,entries:0,busy:false}};
   const playback={axis:[],usesTime:false,total:0,position:0,playing:false,maximumDuration:120,follow:false,frameId:0,startTimestamp:0,startPosition:0,currentIndex:-1,lastFollowTimestamp:0};
   const canvas=document.getElementById('chart'),meta=document.getElementById('chartMeta'),chartPanel=document.getElementById('chartPanel'),summaryPanel=document.getElementById('summaryPanel'),summaryMetrics=document.getElementById('summaryMetrics'),elevationLegend=document.getElementById('elevationLegend'),detailsToggle=document.getElementById('detailsToggle'),recentPanel=document.getElementById('recentPanel'),recentScrim=document.getElementById('recentScrim'),recentList=document.getElementById('recentList'),trackTabs=document.getElementById('trackTabs'),trackColorSelect=document.getElementById('trackColorSelect'),trackColorLegend=document.getElementById('trackColorLegend'),playbackBar=document.getElementById('playbackBar'),playbackToggle=document.getElementById('playbackToggle'),playbackRange=document.getElementById('playbackRange'),playbackPosition=document.getElementById('playbackPosition'),playbackSpeed=document.getElementById('playbackSpeed'),playbackFollow=document.getElementById('playbackFollow'),terrainReadout=document.getElementById('terrainReadout'),settingsPanel=document.getElementById('settingsPanel'),settingsScrim=document.getElementById('settingsScrim'),settingsLanguage=document.getElementById('settingsLanguage'),geocodingToggle=document.getElementById('geocodingToggle'),fileAssociationList=document.getElementById('fileAssociationList'),roadNetworkSettingsSection=document.getElementById('roadNetworkSettingsSection'),roadNetworkLocalBlock=document.getElementById('roadNetworkLocalBlock'),roadNetworkList=document.getElementById('roadNetworkList'),roadNetworkCacheBlock=document.getElementById('roadNetworkCacheBlock'),roadNetworkCacheDescription=document.getElementById('roadNetworkCacheDescription'),roadCacheClearButton=document.getElementById('roadCacheClearButton'),documentPanel=document.getElementById('documentPanel'),documentScrim=document.getElementById('documentScrim'),documentContent=document.getElementById('documentContent'),consentPanel=document.getElementById('consentPanel'),consentScrim=document.getElementById('consentScrim');
@@ -424,6 +424,9 @@
     map.addSource('gpxview-playback',{type:'geojson',data:featureCollection([])});
     map.addLayer({id:'gpxview-playback-halo',type:'circle',source:'gpxview-playback',paint:{'circle-radius':12,'circle-color':'#ff3158','circle-opacity':.22}});
     map.addLayer({id:'gpxview-playback',type:'circle',source:'gpxview-playback',paint:{'circle-radius':6,'circle-color':'#ff3158','circle-stroke-color':'#fff','circle-stroke-width':2.5}});
+    map.addSource('gpxview-user-location',{type:'geojson',data:featureCollection([])});
+    map.addLayer({id:'gpxview-user-location-halo',type:'circle',source:'gpxview-user-location',paint:{'circle-radius':18,'circle-color':'#176bde','circle-opacity':.2}});
+    map.addLayer({id:'gpxview-user-location',type:'circle',source:'gpxview-user-location',paint:{'circle-radius':7,'circle-color':'#176bde','circle-stroke-color':'#fff','circle-stroke-width':3}});
     styleReady=true;
     keepRoadNetworkAboveBaseMap();
     if(styleMode==='raster')setRasterVisibility(activeBaseMap);
@@ -566,7 +569,7 @@
   }
   function applyOverlayData(){
     if(!styleReady)return;
-    map.getSource('gpxview-tracks')?.setData(trackData);map.getSource('gpxview-track-colors')?.setData(trackColorData);map.getSource('gpxview-waypoints')?.setData(waypointData);map.getSource('gpxview-ends')?.setData(endData);map.getSource('gpxview-hover')?.setData(hoverData);map.getSource('gpxview-playback')?.setData(playbackData);
+    map.getSource('gpxview-tracks')?.setData(trackData);map.getSource('gpxview-track-colors')?.setData(trackColorData);map.getSource('gpxview-waypoints')?.setData(waypointData);map.getSource('gpxview-ends')?.setData(endData);map.getSource('gpxview-hover')?.setData(hoverData);map.getSource('gpxview-playback')?.setData(playbackData);map.getSource('gpxview-user-location')?.setData(userLocationData);
     if(!pendingFit)return;pendingFit=false;const bounds=new maplibregl.LngLatBounds();trackData.features.forEach(feature=>feature.geometry.coordinates.forEach(coordinate=>bounds.extend(coordinate)));waypointData.features.forEach(feature=>bounds.extend(feature.geometry.coordinates));if(!bounds.isEmpty())map.fitBounds(bounds,{padding:{top:55,right:55,bottom:chartPanel.hidden?55:chartPanel.offsetHeight+34,left:230},maxZoom:16,duration:500})
   }
   function setRoadNetworkEnabled(enabled){roadNetworkEnabled=roadNetworkAvailable&&enabled;if(!styleReady)return;roadNetworkArchives.forEach((archive,index)=>{const layerId=roadNetworkLayerId(archive,index),selected=!archive.id||roadNetworkSelectedIds.has(archive.id);if(map.getLayer(layerId))map.setLayoutProperty(layerId,'visibility',roadNetworkEnabled&&selected?'visible':'none')});keepRoadNetworkAboveBaseMap()}
@@ -584,6 +587,10 @@
     if(desiredMode==='raster')setRasterVisibility(id)
   }
   function setTheme(theme){darkTheme=theme==='dark';document.documentElement.dataset.theme=darkTheme?'dark':'light';applyMapAtmosphere();applyTerrainAppearance();renderChart(playback.currentIndex)}
+  function setUserLocation(data){
+    const latitude=Number(data.latitude),longitude=Number(data.longitude);if(!Number.isFinite(latitude)||!Number.isFinite(longitude)||latitude < -90||latitude > 90||longitude < -180||longitude > 180)return;
+    userLocationData=featureCollection([{type:'Feature',properties:{accuracyMeters:Number(data.accuracyMeters)||0},geometry:{type:'Point',coordinates:[longitude,latitude]}}]);if(styleReady)map.getSource('gpxview-user-location')?.setData(userLocationData);if(data.fit!==false)map.easeTo({center:[longitude,latitude],zoom:Math.max(map.getZoom(),15),duration:650})
+  }
   function setDetailsVisible(visible){document.body.classList.toggle('details-hidden',!visible);detailsToggle.setAttribute('aria-expanded',String(visible));const label=t(visible?'Web.HideDetails':'Web.ShowDetails');detailsToggle.title=label;detailsToggle.setAttribute('aria-label',label)}
   function setMetric(rowId,valueId,value){const row=document.getElementById(rowId);row.hidden=!value;if(value)document.getElementById(valueId).textContent=value}
   function updateSummary(summary){if(!summary)return;document.getElementById('summaryFormat').textContent=summary.formatLine;document.getElementById('summaryDistance').textContent=summary.distance;summaryMetrics.hidden=false;setMetric('durationMetric','summaryDuration',summary.duration);setMetric('elevationMetric','summaryElevation',summary.elevation);setMetric('speedMetric','summarySpeed',summary.speed);setMetric('heartRateMetric','summaryHeartRate',summary.heartRate);setMetric('cadencePowerMetric','summaryCadencePower',summary.cadencePower)}
@@ -886,6 +893,7 @@
     else if(data?.type==='setTerrainEnabled')setTerrainEnabled(Boolean(data.enabled));
     else if(data?.type==='setRoadNetworkConfig')setRoadNetworkConfig(data.config);
     else if(data?.type==='setRoadNetworkEnabled')setRoadNetworkEnabled(Boolean(data.enabled));
+    else if(data?.type==='setUserLocation')setUserLocation(data);
     else if(data?.type==='setRecentTracks')renderRecentTracks(data.entries);
     else if(data?.type==='setRecentPanelVisible')setRecentPanelVisible(Boolean(data.visible));
     else if(data?.type==='setPlaceName')setPlaceName(data.placeName);

@@ -11,6 +11,8 @@ body.browser-mode .maplibregl-ctrl-top-right{top:48px}
 .browserButton.primary{border-color:#176bde;background:#176bde;color:#fff;font-weight:650}
 .browserButton.primary:hover{background:#125fc8}
 .browserButton.icon{width:32px;padding:0;font-size:13px;font-weight:700}
+.browserButton svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.browserButton:disabled{cursor:default;opacity:.48}
 .browserButton.active{border-color:#176bde;color:#176bde;background:rgba(23,107,222,.12);font-weight:650}
 .browserButton.locked::after{content:"";width:6px;height:6px;border-radius:50%;background:#d08a18;box-shadow:0 0 0 2px var(--glass)}
 .browserSelect{padding:0 7px;max-width:132px;background:var(--select-bg);color:var(--select-text)}

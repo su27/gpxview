@@ -13,6 +13,7 @@
     sourceCoordinateSystem: readSetting('sourceCoordinateSystem', 'wgs84'),
     darkTheme: readSetting('theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') === 'dark',
     terrainEnabled: false,
+    hasUserLocation: false,
     road: {
       authenticated: false,
       identity: null,
@@ -20,7 +21,8 @@
       selectedIds: new Set(readJsonSetting('roadNetworkIds', [])),
       hadSavedSelection: hasSetting('roadNetworkIds'),
       enabled: readSetting('roadNetworkEnabled', 'true') !== 'false'
-    }
+    },
+    roadSessionRefreshAt: 0
   };
   const elements = {};
   let toastTimer = 0;
@@ -46,6 +48,7 @@
         <select id="browserCoordinates" class="browserSelect" aria-label="源坐标系">
           <option value="wgs84">WGS84</option><option value="gcj02">GCJ-02</option><option value="bd09">BD-09</option>
         </select>
+        <button id="browserLocate" class="browserButton" type="button" title="定位到当前位置" aria-label="定位到当前位置"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4"></circle><path d="M10 2v3M10 15v3M2 10h3M15 10h3"></path></svg><span class="wideLabel">当前位置</span></button>
         <button id="browserRoad" class="browserButton locked" type="button">路网</button>
         <button id="browserTerrain" class="browserButton icon" type="button" title="切换三维地形">3D</button>
         <button id="browserTheme" class="browserButton icon" type="button" title="切换主题">◐</button>
@@ -69,6 +72,7 @@
       fileInput: document.getElementById('browserFileInput'),
       mapStyle: document.getElementById('browserMapStyle'),
       coordinates: document.getElementById('browserCoordinates'),
+      locate: document.getElementById('browserLocate'),
       road: document.getElementById('browserRoad'),
       terrain: document.getElementById('browserTerrain'),
       theme: document.getElementById('browserTheme'),
@@ -96,6 +100,11 @@
       writeSetting('sourceCoordinateSystem', state.sourceCoordinateSystem);
       void reparseTracks();
     });
+    elements.locate.addEventListener('click', locateCurrentPosition);
+    if (!navigator.geolocation || !isSecureContext) {
+      elements.locate.disabled = true;
+      elements.locate.title = '当前浏览器不支持安全定位';
+    }
     elements.road.addEventListener('click', openRoadPanel);
     elements.roadScrim.addEventListener('click', closeRoadPanel);
     elements.terrain.addEventListener('click', () => emit({ type: 'setTerrainEnabled', enabled: !state.terrainEnabled }));
@@ -117,6 +126,11 @@
     if (state.pageReady) sendInitialState();
     void restoreRoadAccess();
     setInterval(() => { if (state.road.authenticated) void refreshRoadSession(false); }, 45 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && state.road.authenticated && Date.now() >= state.roadSessionRefreshAt) {
+        void refreshRoadSession(false);
+      }
+    });
   }
 
   function handlePageMessage(message) {
@@ -279,6 +293,45 @@
     updateTheme();
   }
 
+  function locateCurrentPosition() {
+    if (!navigator.geolocation || !isSecureContext || elements.locate.disabled) return;
+    elements.locate.disabled = true;
+    elements.locate.setAttribute('aria-busy', 'true');
+    elements.locate.title = '正在获取当前位置…';
+    navigator.geolocation.getCurrentPosition(position => {
+      const latitude = Number(position.coords.latitude);
+      const longitude = Number(position.coords.longitude);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        finishLocationRequest('无法读取有效的当前位置');
+        return;
+      }
+      state.hasUserLocation = true;
+      elements.locate.classList.add('active');
+      emit({
+        type: 'setUserLocation',
+        latitude,
+        longitude,
+        accuracyMeters: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
+        fit: true
+      });
+      const accuracy = Number(position.coords.accuracy);
+      finishLocationRequest(null, Number.isFinite(accuracy) ? `已定位 · 精度约 ${Math.round(accuracy)} m` : '已定位到当前位置');
+    }, error => {
+      const message = error.code === 1
+        ? '定位权限未授予，请在浏览器站点设置中允许定位'
+        : error.code === 3 ? '获取当前位置超时，请重试' : '暂时无法获取当前位置';
+      finishLocationRequest(message);
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+  }
+
+  function finishLocationRequest(error, success) {
+    elements.locate.disabled = false;
+    elements.locate.removeAttribute('aria-busy');
+    elements.locate.title = state.hasUserLocation ? '更新当前位置' : '定位到当前位置';
+    if (error) showToast(error);
+    else if (success) showToast(success);
+  }
+
   function updateTheme() {
     elements.theme?.classList.toggle('active', state.darkTheme);
     emit({ type: 'setTheme', theme: state.darkTheme ? 'dark' : 'light' });
@@ -290,6 +343,7 @@
       const status = await requestJson('/v1/web/status');
       state.road.identity = status;
       state.road.authenticated = true;
+      state.roadSessionRefreshAt = refreshAtFromExpiry(status.expiresAt);
       await loadRoadCatalog();
       return;
     } catch (error) {
@@ -306,6 +360,7 @@
       const identity = await requestJson('/v1/web/session', { method: 'POST' });
       state.road.identity = identity;
       state.road.authenticated = true;
+      state.roadSessionRefreshAt = Date.now() + Math.max(60, (Number(identity.expiresIn) || 3600) - 300) * 1000;
       await loadRoadCatalog();
       return true;
     } catch (error) {
@@ -333,6 +388,7 @@
     state.road.authenticated = false;
     state.road.identity = null;
     state.road.archives = [];
+    state.roadSessionRefreshAt = 0;
     updateRoadButton();
     applyRoadConfig();
     if (elements.roadPanel && !elements.roadPanel.hidden) renderRoadPanel();
@@ -424,13 +480,12 @@
       if (code.replace(/\s+/g, '').length < 12) { error.textContent = '请输入有效的激活码。'; return; }
       activate.disabled = true; activate.textContent = '正在激活…';
       try {
-        state.road.identity = await requestJson('/v1/web/enroll', {
+        await requestJson('/v1/web/enroll', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code, deviceName: browserDeviceName(), clientVersion: 'GpxView Web', acceptTerms: true })
         });
-        state.road.authenticated = true;
-        await loadRoadCatalog();
+        if (!await refreshRoadSession(false)) throw new Error('persistent_session_failed');
         renderRoadPanel();
         showToast('当前浏览器已获得路网授权');
       } catch (requestError) {
@@ -497,6 +552,13 @@
       throw error;
     }
     return data || {};
+  }
+
+  function refreshAtFromExpiry(expiresAt) {
+    const expiryMilliseconds = Number(expiresAt) * 1000;
+    return Number.isFinite(expiryMilliseconds)
+      ? Math.max(Date.now(), expiryMilliseconds - 5 * 60 * 1000)
+      : Date.now();
   }
 
   function localizedArchiveName(archive) {
