@@ -37,9 +37,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 
 ## 网页版
 
-网页版部署在 <https://web.example.invalid/>。它与桌面应用复用同一套地图、轨迹、海拔图、标注点和多路网前端代码，支持在浏览器中打开或拖放多个 GPX、KML、KMZ、FIT 文件，并提供轨迹切换、显示隐藏、底图、3D 地形、浏览器授权的当前位置、源坐标纠正和北京/河北私有路网选择。轨迹文件完全在浏览器本地解析，不会上传；网页版暂不支持最近文件、Windows 文件关联和本地 PMTiles。
-
-私有路网使用一次性激活码授权当前浏览器。长期设备凭证和短期访问凭证都只存入 `HttpOnly`、`SameSite=Strict` Cookie，不暴露给网页 JavaScript，也不写入 `localStorage`；访问 PMTiles 必须携带有效授权且只能按受限字节段读取。北京和河北归档使用各自稳定的 dataset ID，省份选择不依赖目录顺序。
+项目包含与桌面应用共用地图、轨迹、海拔图和标注点实现的浏览器前端，支持在浏览器中打开或拖放多个 GPX、KML、KMZ、FIT 文件，并提供轨迹切换、显示隐藏、底图、3D 地形、浏览器授权的当前位置和源坐标纠正。轨迹文件完全在浏览器本地解析，不会上传；浏览器前端暂不支持最近文件、Windows 文件关联和本地 PMTiles。私有站点的部署材料、地址与服务配置不在此仓库维护。
 
 ## 安装
 
@@ -128,7 +126,7 @@ python tools\roadnet\build_density_pmtiles.py `
 
 转换器默认生成 lossless WebP，并设置 2 万条源记录保护上限；扩大范围时必须显式提高 `--max-records`。应用启动时会扫描 `%LOCALAPPDATA%\GpxView\RoadNetwork` 顶层的所有 `*.pmtiles`，跳过损坏或不支持的文件，并为每个有效归档建立独立 Range 地址和地图图层。每个远程归档使用稳定的 dataset ID 建立独立请求地址和缓存索引；同名本地归档只替代对应的远程 dataset，不会因北京、河北等省域边界框相交而屏蔽其他路网。备份文件可放入子目录，子目录不会被扫描。本地和远程都没有有效归档时，才不显示“路网”按钮。
 
-当远程私有路网服务提供 PMTiles 归档时，应用仍通过内部 Range 地址读取瓦片，但会把成功返回的 `GET 206` 字节段缓存到 `%LOCALAPPDATA%\GpxView\RoadNetworkCache`。缓存键包含服务归档 ID 与 ETag，因此归档版本变化后不会复用旧数据。设置面板会显示远程路网缓存大小和数据块数量，并可一键清理该缓存目录；清理不会删除 `%LOCALAPPDATA%\GpxView\RoadNetwork` 中的本地 PMTiles 文件。Worker 也会把远程 Range 片段写入 edge platform Cache API，以减少多人或多次访问同一区域时的 R2 读取操作；该缓存是边缘数据中心本地缓存，最好通过自有域名或 edge platform route 提供服务。当前部署使用 `https://roadnet.example.invalid/`；已经连接旧 `example.invalid` 地址的设备会在目录验证成功后迁移设置和 Windows 凭据，迁移失败时保留旧凭据以便重试。
+当用户自行配置兼容的远程私有路网服务时，应用仍通过内部 Range 地址读取瓦片，并把成功返回的 `GET 206` 字节段缓存到 `%LOCALAPPDATA%\GpxView\RoadNetworkCache`。缓存键包含服务归档 ID 与 ETag，因此归档版本变化后不会复用旧数据。设置面板会显示远程路网缓存大小和数据块数量，并可一键清理该缓存目录；清理不会删除 `%LOCALAPPDATA%\GpxView\RoadNetwork` 中的本地 PMTiles 文件。具体服务部署与线上配置不属于公开仓库内容。
 
 例如生成北京范围、最高到 z16 的归档：
 

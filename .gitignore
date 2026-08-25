@@ -13,5 +13,6 @@ __pycache__/
 src/GpxView.App/MapServices.local.json
 
 **/node_modules/
-**/.private-runtime/
-**/.dev.vars
+
+# Private deployment services are maintained outside the public source tree.
+/services/

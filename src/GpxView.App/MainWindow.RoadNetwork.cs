@@ -13,7 +13,7 @@ namespace GpxView.App;
 
 public partial class MainWindow
 {
-    private const string RoadNetworkRequestBaseUrl = "https://roadnet.gpxview/archives/";
+    private const string RoadNetworkRequestBaseUrl = "https://local.gpxview.invalid/archives/";
     private static readonly Regex RemoteArchiveIdPattern = new("^[a-z0-9-]{1,80}$", RegexOptions.CultureInvariant);
     private readonly List<LocalRoadNetworkArchive> roadNetworkArchives = [];
     private readonly List<RemoteRoadNetworkArchive> remoteRoadNetworkArchives = [];
@@ -27,7 +27,6 @@ public partial class MainWindow
     private readonly SemaphoreSlim remoteRoadNetworkGate = new(1, 1);
     private readonly RoadNetworkRangeCache roadNetworkRangeCache = new(AppPaths.RoadNetworkCacheFolder);
     private RoadNetworkServiceClient? roadNetworkServiceClient;
-    private Uri? pendingRoadNetworkEndpointMigrationSource;
     private string remoteRoadNetworkStatus = "disconnected";
     private string remoteRoadNetworkError = string.Empty;
     private bool remoteRoadNetworkBusy;
@@ -53,13 +52,9 @@ public partial class MainWindow
 
         try
         {
-            var endpoint = RoadNetworkServiceEndpoints.Resolve(configuredEndpoint);
+            var endpoint = configuredEndpoint;
             var token = roadNetworkCredentialStore.Value.ReadDeviceToken(endpoint);
-            if (token is null && endpoint != configuredEndpoint)
-                token = roadNetworkCredentialStore.Value.ReadDeviceToken(configuredEndpoint);
             if (string.IsNullOrWhiteSpace(token)) return;
-            if (endpoint != configuredEndpoint)
-                pendingRoadNetworkEndpointMigrationSource = configuredEndpoint;
             roadNetworkServiceClient = new RoadNetworkServiceClient(endpoint, token);
             remoteRoadNetworkStatus = "connecting";
         }
@@ -199,7 +194,7 @@ public partial class MainWindow
 
     private void ConfigureRoadNetworkRequests(CoreWebView2 core)
     {
-        core.AddWebResourceRequestedFilter("https://roadnet.gpxview/archives/*", CoreWebView2WebResourceContext.All);
+        core.AddWebResourceRequestedFilter("https://local.gpxview.invalid/archives/*", CoreWebView2WebResourceContext.All);
         core.WebResourceRequested += OnRoadNetworkResourceRequested;
     }
 
@@ -480,7 +475,6 @@ public partial class MainWindow
             try
             {
                 var catalog = await serviceClient.GetCatalogAsync(lifetimeCancellation.Token);
-                CompleteRoadNetworkEndpointMigration(serviceClient);
                 ApplyRemoteRoadNetworkCatalog(serviceClient.Endpoint, catalog, notifyWeb);
                 remoteRoadNetworkStatus = "connected";
             }
@@ -528,7 +522,6 @@ public partial class MainWindow
                 remoteRoadNetworkStatus = "invalidEndpoint";
                 return;
             }
-            endpoint = RoadNetworkServiceEndpoints.Resolve(endpoint);
             appSettings = appSettings with { RoadNetworkServiceEndpoint = endpoint.AbsoluteUri };
             appSettingsStore.Save(appSettings);
             if (string.IsNullOrWhiteSpace(enrollmentCode))
@@ -551,15 +544,11 @@ public partial class MainWindow
 
                 var previousClient = roadNetworkServiceClient;
                 var previousEndpoint = previousClient?.Endpoint;
-                var migrationSourceEndpoint = pendingRoadNetworkEndpointMigrationSource;
                 roadNetworkServiceClient = nextClient;
                 nextClient = null!;
-                pendingRoadNetworkEndpointMigrationSource = null;
                 previousClient?.Dispose();
                 if (previousEndpoint is not null && previousEndpoint != endpoint)
                     roadNetworkCredentialStore.Value.DeleteDeviceToken(previousEndpoint);
-                if (migrationSourceEndpoint is not null && migrationSourceEndpoint != endpoint)
-                    roadNetworkCredentialStore.Value.DeleteDeviceToken(migrationSourceEndpoint);
 
                 appSettings = appSettings with
                 {
@@ -634,12 +623,6 @@ public partial class MainWindow
             {
                 roadNetworkCredentialStore.Value.DeleteDeviceToken(endpoint);
             }
-            if (pendingRoadNetworkEndpointMigrationSource is { } migrationSourceEndpoint)
-            {
-                roadNetworkCredentialStore.Value.DeleteDeviceToken(migrationSourceEndpoint);
-                pendingRoadNetworkEndpointMigrationSource = null;
-            }
-
             appSettings = appSettings with
             {
                 RoadNetworkAccountId = string.Empty,
@@ -690,50 +673,6 @@ public partial class MainWindow
         if (!notifyWeb) return;
         SendRoadNetworkConfig();
         SendRoadNetworkMode();
-    }
-
-    private void CompleteRoadNetworkEndpointMigration(RoadNetworkServiceClient serviceClient)
-    {
-        if (pendingRoadNetworkEndpointMigrationSource is not { } sourceEndpoint) return;
-
-        try
-        {
-            var targetEndpoint = serviceClient.Endpoint;
-            roadNetworkCredentialStore.Value.SaveDeviceToken(targetEndpoint, serviceClient.GetDeviceToken());
-            var migratedSettings = appSettings with
-            {
-                RoadNetworkServiceEndpoint = targetEndpoint.AbsoluteUri
-            };
-            appSettingsStore.Save(migratedSettings);
-            var persistedSettings = appSettingsStore.Load();
-            if (!string.Equals(
-                    persistedSettings.RoadNetworkServiceEndpoint,
-                    targetEndpoint.AbsoluteUri,
-                    StringComparison.OrdinalIgnoreCase)) return;
-
-            appSettings = migratedSettings;
-            pendingRoadNetworkEndpointMigrationSource = null;
-        }
-        catch (Exception exception) when (exception is InvalidOperationException
-                                               or UnauthorizedAccessException
-                                               or System.ComponentModel.Win32Exception
-                                               or System.Runtime.InteropServices.COMException)
-        {
-            // Keep the old settings and credential so a failed migration can be retried safely.
-            return;
-        }
-
-        try
-        {
-            roadNetworkCredentialStore.Value.DeleteDeviceToken(sourceEndpoint);
-        }
-        catch (Exception exception) when (exception is InvalidOperationException
-                                               or UnauthorizedAccessException
-                                               or System.ComponentModel.Win32Exception
-                                               or System.Runtime.InteropServices.COMException)
-        {
-            // The verified target credential is already durable; stale-source cleanup is best effort.
-        }
     }
 
     private static bool TryCreateRemoteRoadNetworkArchive(
