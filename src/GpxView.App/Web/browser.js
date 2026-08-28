@@ -54,12 +54,6 @@
         <button id="browserTheme" class="browserButton icon" type="button" title="切换主题">◐</button>
         <span id="browserToolbarSpacer"></span><span id="browserStatus">可打开 GPX、KML、KMZ 和 FIT，文件不会上传</span>
       </header>
-      <section id="browserWelcome" class="glass">
-        <h1>GpxView Web</h1>
-        <p>在浏览器中查看轨迹、海拔、标注点和北京/河北授权路网。<br>轨迹文件只在当前浏览器中解析，不会上传到服务器。</p>
-        <button id="browserWelcomeOpen" class="browserButton primary" type="button">打开 GPX / KML / KMZ / FIT</button>
-        <div id="browserWelcomeHint">也可以把多个轨迹文件直接拖到这里</div>
-      </section>
       <div id="browserDropOverlay" hidden>松开以打开轨迹</div>
       <div id="browserRoadScrim" hidden></div><section id="browserRoadPanel" class="glass" hidden></section>
       <div id="browserToast" hidden></div>
@@ -67,8 +61,6 @@
     `);
     Object.assign(elements, {
       open: document.getElementById('browserOpen'),
-      welcome: document.getElementById('browserWelcome'),
-      welcomeOpen: document.getElementById('browserWelcomeOpen'),
       fileInput: document.getElementById('browserFileInput'),
       mapStyle: document.getElementById('browserMapStyle'),
       coordinates: document.getElementById('browserCoordinates'),
@@ -85,7 +77,6 @@
     elements.mapStyle.value = state.mapStyle;
     elements.coordinates.value = state.sourceCoordinateSystem;
     elements.open.addEventListener('click', chooseFiles);
-    elements.welcomeOpen.addEventListener('click', chooseFiles);
     elements.fileInput.addEventListener('change', () => {
       void openFiles(elements.fileInput.files);
       elements.fileInput.value = '';
@@ -191,7 +182,6 @@
         errors.push(`${file.name}：${error?.message || '无法读取'}`);
       }
     }
-    if (state.tracks.size) elements.welcome.hidden = true;
     emitTracks(opened > 0);
     setStatus(state.tracks.size ? `已打开 ${state.tracks.size} 条轨迹` : '尚未打开轨迹');
     if (rejected) errors.push(`${rejected} 个不支持的文件已跳过（网页版支持 GPX、KML、KMZ、FIT）`);
@@ -250,7 +240,6 @@
     if (state.activeTrackId === id) state.activeTrackId = state.tracks.keys().next().value || null;
     emit({ type: 'removeTrack', id, activeTrackId: state.activeTrackId });
     if (!state.tracks.size) {
-      elements.welcome.hidden = false;
       setStatus('可打开 GPX、KML、KMZ 和 FIT，文件不会上传');
     } else setStatus(`已打开 ${state.tracks.size} 条轨迹`);
   }
