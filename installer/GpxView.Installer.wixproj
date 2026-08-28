@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Platform>x64</Platform>
     <OutputType>Package</OutputType>
-    <OutputName>GpxView-0.2.7-win-x64</OutputName>
+    <OutputName>GpxView-0.2.8-win-x64</OutputName>
     <OutputPath>$(MSBuildThisFileDirectory)..\artifacts\installer\</OutputPath>
     <PublishDir>$(MSBuildThisFileDirectory)..\artifacts\publish\win-x64</PublishDir>
     <DefineConstants>PublishDir=$(PublishDir);SourceRoot=$(MSBuildThisFileDirectory)..</DefineConstants>

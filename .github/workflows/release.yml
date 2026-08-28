@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to release, for example v0.2.4"
+        description: "Tag to release, for example v0.2.8"
         required: true
-        default: "v0.2.4"
+        default: "v0.2.8"
 
 permissions:
   contents: write
@@ -65,9 +65,11 @@ jobs:
           @"
           ## Changes
 
-          - Display GPX waypoints and KML/KMZ point placemarks on the map.
-          - Show waypoint names and click-through details including description, elevation, symbol, and type.
-          - Support files that contain waypoints without a recorded track.
+          - Add the shared web track viewer with GPX, KML, KMZ, and FIT support.
+          - Add token-authorized Beijing and Hebei road networks with multi-network selection.
+          - Improve mobile terrain gestures, responsive track controls, and current-location support.
+          - Show waypoint names on the elevation chart with elevation and distance details.
+          - Allow the shared web and desktop welcome panel to be dismissed for map-only browsing.
           - Bump Windows package version to $env:VERSION.
 
           ## Artifact

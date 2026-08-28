@@ -44,7 +44,7 @@ Windows 下轻量、快速的 GPX、KML、KMZ、FIT 轨迹查看器。
 构建出的 64 位 MSI 位于：
 
 ```text
-artifacts\installer\GpxView-0.2.7-win-x64.msi
+artifacts\installer\GpxView-0.2.8-win-x64.msi
 ```
 
 安装器将 GpxView 安装到 Program Files，创建开始菜单入口，并向 Windows 注册 GPX、KML、KMZ、FIT 的可选打开方式和“默认应用”能力；它不会在安装时抢占现有默认程序，也不创建桌面快捷方式。GitHub 版可在应用设置中为这些格式设为 GpxView；若 Windows 已用受保护的默认应用记录锁定其他程序，设置面板会改为打开系统确认入口。安装包包含 .NET 10 桌面运行时，终端用户无需另行安装 .NET。现代 Windows 通常已包含 Microsoft Edge WebView2 Runtime；若该组件缺失，应用会显示修复提示。
@@ -189,7 +189,7 @@ Store 发布目录是与商店包身份解耦的应用载荷。若 Partner Cente
 dotnet build installer\GpxView.Store.Installer.wixproj -c Release
 ```
 
-输出为 `artifacts\installer\GpxView-0.2.7-store-win-x64.msi`。该项目会在构建时再次拒绝任何包含 `MapServices.local.json` 的 Store 载荷。
+输出为 `artifacts\installer\GpxView-0.2.8-store-win-x64.msi`。该项目会在构建时再次拒绝任何包含 `MapServices.local.json` 的 Store 载荷。
 
 Microsoft Store 中已预留正式产品 `GpxView`，其公开包身份如下：
 
@@ -220,7 +220,7 @@ dotnet publish src\GpxView.App\GpxView.App.csproj -p:PublishProfile=win-x64
 dotnet build installer\GpxView.Installer.wixproj -c Release
 ```
 
-输出为 `artifacts\installer\GpxView-0.2.7-win-x64.msi`。
+输出为 `artifacts\installer\GpxView-0.2.8-win-x64.msi`。
 
 应用图标如需从可编辑源重新生成：
 
